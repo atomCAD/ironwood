@@ -20,6 +20,12 @@ cargo fmt --all -- --check
 echo Checking cargo doc...
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
 
+echo Building book...
+sh -c "cd guide && mdbook build"
+
+echo Running mdbook tests...
+sh -c "cd guide && mdbook test"
+
 echo All done!
 
 # End of file

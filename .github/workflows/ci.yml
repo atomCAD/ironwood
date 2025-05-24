@@ -159,6 +159,7 @@ jobs:
         if: ${{ matrix.platform.use_cross }}
         shell: bash
         run: CARGO_TARGET_${{ matrix.platform.target_upper }}_RUSTFLAGS='${{ matrix.platform.rustflags }}' cross clippy --target ${{ matrix.platform.target }} --workspace --all-targets --all-features -- -D warnings
+
   rustfmt:
     name: Formatting
     runs-on: ubuntu-22.04
@@ -180,3 +181,30 @@ jobs:
       - name: Check format
         shell: bash
         run: cargo fmt --all -- --check
+
+  book:
+    name: Book
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ubuntu-22.04-mdbook-${{ hashFiles('**/Cargo.*') }}
+    - name: Setup mdBook
+      uses: peaceiris/actions-mdbook@v2
+      with:
+        mdbook-version: '0.4.50'
+    - name: Build mdBook
+      run: |
+        cd guide
+        mdbook build
+    - name: Test mdBook
+      run: |
+        cd guide
+        mdbook test
