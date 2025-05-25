@@ -3,13 +3,16 @@
 set -e
 
 echo Checking syntax...
-cargo check
+cargo check # native
+RUSTFLAGS='--cfg=getrandom_backend="wasm_js"' cargo check --target wasm32-unknown-unknown # web
 
 echo Running tests...
-cargo test --workspace --all-features
+cargo test --workspace --all-features # native
+RUSTFLAGS='--cfg=getrandom_backend="wasm_js"' wasm-pack test --node # web
 
 echo Running linter check...
-cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo clippy --workspace --all-targets --all-features -- -D warnings # native
+RUSTFLAGS='--cfg=getrandom_backend="wasm_js"' cargo clippy --workspace --target wasm32-unknown-unknown --all-targets --all-features -- -D warnings # web
 
 echo Running formatting check...
 cargo fmt --all -- --check

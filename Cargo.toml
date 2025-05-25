@@ -18,3 +18,12 @@ license = "MPL-2.0"
 edition = "2024"
 
 [dependencies]
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+# The getrandom crate requires a special feture flag to support web backends, as of version 0.3.
+# See also the configuration flag setting in .cargo/config.toml
+getrandom = { version = "0.3", features = ["wasm_js"] }
+
+[target.'cfg(target_family = "wasm")'.dev-dependencies]
+# Testing infrastructure for WASM targets
+wasm-bindgen-test = { version = "0.3" }
