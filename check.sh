@@ -4,10 +4,12 @@ set -e
 
 echo Checking syntax...
 cargo check # native
+cargo check --examples
 RUSTFLAGS='--cfg=getrandom_backend="wasm_js"' cargo check --target wasm32-unknown-unknown # web
 
 echo Running tests...
 cargo test --workspace --all-features # native
+cargo test --workspace --all-features --examples
 RUSTFLAGS='--cfg=getrandom_backend="wasm_js"' wasm-pack test --node # web
 
 echo Running linter check...
