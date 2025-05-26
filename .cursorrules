@@ -212,7 +212,8 @@ project:
 
     git_restrictions:
       - "AI assistants MUST NEVER use any git commands that modify the workspace"
-      - "NEVER use: git checkout, git reset, git revert, git stash, git pull, git merge, git rebase"
+      - "NEVER use: git add, git commit, git checkout, git reset, git revert, git stash, git pull, git merge, git rebase"
+      - "NEVER use git to stage changes - only use file editing tools"
       - "NEVER use git to undo changes - only use file editing tools"
       - "NEVER use git to restore files - only use file editing tools"
       - "The user controls ALL git operations that affect the workspace"
