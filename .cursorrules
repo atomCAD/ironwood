@@ -210,6 +210,14 @@ project:
       - "The user may request a commit message suggestion from AI"
       - "The user makes the final decision on what gets committed and when"
 
+    git_restrictions:
+      - "AI assistants MUST NEVER use any git commands that modify the workspace"
+      - "NEVER use: git checkout, git reset, git revert, git stash, git pull, git merge, git rebase"
+      - "NEVER use git to undo changes - only use file editing tools"
+      - "NEVER use git to restore files - only use file editing tools"
+      - "The user controls ALL git operations that affect the workspace"
+      - "AI can only suggest git commands, never execute them"
+
   # Code review
   require_review: true
   review_checklist:
