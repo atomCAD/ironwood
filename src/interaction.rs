@@ -660,55 +660,99 @@ mod tests {
 
     #[test]
     fn interactive_enableable() {
+        // Test Enableable trait methods
         let interactive = Interactive::new();
+
+        // Test initial state
         assert!(interactive.is_enabled());
 
-        let disabled = interactive.disable();
+        // Test disable
+        let disabled = interactive.clone().disable();
         assert!(!disabled.is_enabled());
 
+        // Test enable
         let enabled = disabled.enable();
         assert!(enabled.is_enabled());
+
+        // Test with_enabled
+        let conditionally_enabled = interactive.clone().with_enabled(false);
+        assert!(!conditionally_enabled.is_enabled());
+        let conditionally_enabled = conditionally_enabled.with_enabled(true);
+        assert!(conditionally_enabled.is_enabled());
     }
 
     #[test]
     fn interactive_pressable() {
+        // Test Pressable trait methods
         let interactive = Interactive::new();
+
+        // Test initial state
         assert!(!interactive.is_pressed());
 
-        let pressed = interactive.press();
+        // Test press
+        let pressed = interactive.clone().press();
         assert!(pressed.is_pressed());
 
+        // Test release
         let released = pressed.release();
         assert!(!released.is_pressed());
+
+        // Test with_pressed
+        let conditionally_pressed = interactive.clone().with_pressed(true);
+        assert!(conditionally_pressed.is_pressed());
+        let conditionally_pressed = conditionally_pressed.with_pressed(false);
+        assert!(!conditionally_pressed.is_pressed());
     }
 
     #[test]
     fn interactive_focusable() {
+        // Test Focusable trait methods
         let interactive = Interactive::new();
+
+        // Test initial state
         assert!(!interactive.is_focused());
         assert!(interactive.can_receive_focus());
 
+        // Test focus
         let focused = interactive.clone().focus();
         assert!(focused.is_focused());
 
+        // Test unfocus
         let unfocused = focused.unfocus();
         assert!(!unfocused.is_focused());
 
-        // Disabled components cannot receive focus
-        let disabled = interactive.disable();
-        assert!(!disabled.can_receive_focus());
+        // Test with_focused
+        let conditionally_focused = interactive.clone().with_focused(true);
+        assert!(conditionally_focused.is_focused());
+        let conditionally_focused = conditionally_focused.with_focused(false);
+        assert!(!conditionally_focused.is_focused());
+
+        // Test disabled button cannot receive focus
+        let disabled_button = interactive.disable();
+        assert!(!disabled_button.can_receive_focus());
     }
 
     #[test]
     fn interactive_hoverable() {
+        // Test Hoverable trait methods
         let interactive = Interactive::new();
+
+        // Test initial state
         assert!(!interactive.is_hovered());
 
-        let hovered = interactive.hover();
+        // Test hover
+        let hovered = interactive.clone().hover();
         assert!(hovered.is_hovered());
 
+        // Test unhover
         let unhovered = hovered.unhover();
         assert!(!unhovered.is_hovered());
+
+        // Test with_hovered
+        let conditionally_hovered = interactive.clone().with_hovered(true);
+        assert!(conditionally_hovered.is_hovered());
+        let conditionally_hovered = conditionally_hovered.with_hovered(false);
+        assert!(!conditionally_hovered.is_hovered());
     }
 
     #[test]
@@ -745,6 +789,43 @@ mod tests {
         assert!(interactive.is_pressed());
         assert!(interactive.is_focused());
         assert!(interactive.is_hovered());
+    }
+
+    #[test]
+    fn interaction_edge_cases() {
+        // Test rapid state changes
+        let mut interactive = Interactive::new();
+
+        // Rapidly toggle states
+        for _ in 0..1000 {
+            interactive = interactive
+                .press()
+                .release()
+                .focus()
+                .unfocus()
+                .hover()
+                .unhover();
+        }
+
+        // Should end up in default state
+        assert!(interactive.is_enabled());
+        assert!(!interactive.is_pressed());
+        assert!(!interactive.is_focused());
+        assert!(!interactive.is_hovered());
+        assert!(interactive.can_receive_focus());
+
+        // Test state combinations that can occur together
+        let combined_states = Interactive::new()
+            .disable()
+            .focus() // Disabled but focused (can happen during state transitions)
+            .press() // Disabled but pressed (can happen during state transitions)
+            .hover(); // Disabled but hovered (normal - for tooltips, etc.)
+
+        assert!(!combined_states.is_enabled());
+        assert!(combined_states.is_focused());
+        assert!(combined_states.is_pressed());
+        assert!(combined_states.is_hovered());
+        assert!(!combined_states.can_receive_focus()); // But can't receive new focus
     }
 }
 

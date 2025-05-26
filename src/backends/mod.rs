@@ -13,6 +13,6 @@
 
 pub mod mock;
 
-pub use mock::{MockBackend, MockButton, MockText};
+pub use mock::{MockBackend, MockButton, MockHStack, MockSpacer, MockText, MockVStack};
 
 // End of File

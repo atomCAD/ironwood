@@ -353,4 +353,115 @@ fn extraction_edge_cases() {
     assert!(state_extracted.interaction_state.is_enabled());
 }
 
+/// Test extraction of deeply nested structures.
+///
+/// This validates that the extraction system can handle complex nested
+/// structures without stack overflow or performance issues.
+#[test]
+fn deep_nesting_extraction() {
+    let ctx = RenderContext::new();
+
+    // Create deeply nested tuple structure
+    let deeply_nested = (
+        (
+            (
+                (Text::new("Level 1"), Text::new("Level 2")),
+                (Text::new("Level 3"), Text::new("Level 4")),
+            ),
+            (
+                (Text::new("Level 5"), Text::new("Level 6")),
+                (Text::new("Level 7"), Text::new("Level 8")),
+            ),
+        ),
+        VStack::new((
+            HStack::new((Text::new("Nested"), Text::new("Stack"))),
+            VStack::new((Text::new("Deep"), Text::new("Nesting"))),
+        )),
+    );
+
+    // Should be able to extract without stack overflow
+    let _extracted = MockBackend::extract(&deeply_nested, &ctx);
+    // If we get here, the test passed
+}
+
+/// Test extraction performance with large collections.
+///
+/// This validates that the extraction system can handle large numbers
+/// of components efficiently.
+#[test]
+fn large_collection_extraction() {
+    let ctx = RenderContext::new();
+
+    // Create many small components
+    let mut components = Vec::new();
+    for i in 0..1000 {
+        components.push(Text::new(format!("Component {}", i)));
+    }
+
+    // Extract all of them
+    let extracted: Vec<_> = components
+        .iter()
+        .map(|comp| MockBackend::extract(comp, &ctx))
+        .collect();
+
+    assert_eq!(extracted.len(), 1000);
+    assert_eq!(extracted[0].content, "Component 0");
+    assert_eq!(extracted[999].content, "Component 999");
+
+    // Create large tuple (test tuple extraction limits)
+    let large_tuple = (
+        Text::new("1"),
+        Text::new("2"),
+        Text::new("3"),
+        Text::new("4"),
+        Text::new("5"),
+        Text::new("6"),
+        Text::new("7"),
+        Text::new("8"),
+        Text::new("9"),
+        Text::new("10"),
+        Text::new("11"),
+        Text::new("12"),
+    );
+    let extracted_tuple = MockBackend::extract(&large_tuple, &ctx);
+    assert_eq!(extracted_tuple.0.content, "1");
+    assert_eq!(extracted_tuple.11.content, "12");
+}
+
+/// Test extraction of optional values.
+///
+/// This validates that the extraction system correctly handles Option types
+/// including nested options and options within containers.
+#[test]
+fn option_extraction() {
+    let ctx = RenderContext::new();
+
+    // Nested options
+    let nested_some: Option<Option<Text>> = Some(Some(Text::new("Nested")));
+    let extracted = MockBackend::extract(&nested_some, &ctx);
+    assert!(extracted.is_some());
+    assert!(extracted.as_ref().unwrap().is_some());
+    assert_eq!(extracted.unwrap().unwrap().content, "Nested");
+
+    let nested_none: Option<Option<Text>> = Some(None);
+    let extracted = MockBackend::extract(&nested_none, &ctx);
+    assert!(extracted.is_some());
+    assert!(extracted.unwrap().is_none());
+
+    let outer_none: Option<Option<Text>> = None;
+    let extracted = MockBackend::extract(&outer_none, &ctx);
+    assert!(extracted.is_none());
+
+    // Option in containers
+    let optional_stack = VStack::new((
+        Some(Text::new("Present")),
+        None::<Text>,
+        Some(Text::new("Also present")),
+    ));
+    let extracted = MockBackend::extract(&optional_stack, &ctx);
+    assert!(extracted.content.0.is_some());
+    assert!(extracted.content.1.is_none());
+    assert!(extracted.content.2.is_some());
+}
+
 // End of File

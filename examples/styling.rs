@@ -39,6 +39,10 @@ fn main() {
     demonstrate_view_extraction(&ctx);
     println!();
 
+    // Demonstrate layout containers with styling
+    demonstrate_layout_styling(&ctx);
+    println!();
+
     println!("✅ Styling example completed successfully!");
 }
 
@@ -340,6 +344,116 @@ fn demonstrate_view_extraction(ctx: &RenderContext) {
     println!();
     println!("  🔍 Notice how all view data is perfectly preserved through extraction!");
     println!("     This demonstrates the ViewExtractor pattern's effectiveness.");
+}
+
+/// Demonstrates layout containers with styling
+fn demonstrate_layout_styling(ctx: &RenderContext) {
+    println!("📐 Layout Container Styling Demonstration");
+    println!("------------------------------------------");
+
+    // Create styled text components for layout
+    let title = Text::new("Application Dashboard")
+        .font_size(24.0)
+        .color(Color::rgb(0.1, 0.1, 0.1));
+
+    let subtitle = Text::new("Real-time system status")
+        .font_size(16.0)
+        .color(Color::rgb(0.4, 0.4, 0.4));
+
+    let status_good = Text::new("✅ All systems operational")
+        .font_size(14.0)
+        .color(Color::rgb(0.1, 0.7, 0.1));
+
+    let status_warning = Text::new("⚠️ Minor issues detected")
+        .font_size(14.0)
+        .color(Color::rgb(0.9, 0.6, 0.0));
+
+    // Create action buttons with consistent styling
+    let primary_action = Button::new("Refresh Data")
+        .background_color(Color::rgb(0.2, 0.5, 0.9))
+        .with_text(|text| text.color(Color::WHITE).font_size(16.0));
+
+    let secondary_action = Button::new("View Details")
+        .background_color(Color::rgb(0.95, 0.95, 0.95))
+        .with_text(|text| text.color(Color::rgb(0.2, 0.2, 0.2)).font_size(16.0));
+
+    // Create a complete dashboard layout using containers
+    let header_section = VStack::new((title, subtitle))
+        .spacing(8.0)
+        .alignment(Alignment::Leading);
+
+    let status_section = VStack::new((status_good, status_warning))
+        .spacing(4.0)
+        .alignment(Alignment::Leading);
+
+    let action_section = HStack::new((primary_action, secondary_action))
+        .spacing(12.0)
+        .alignment(Alignment::Center);
+
+    let complete_dashboard = VStack::new((
+        header_section,
+        Spacer::min_size(20.0), // Add space between sections
+        status_section,
+        Spacer::min_size(16.0),
+        action_section,
+    ))
+    .spacing(0.0) // No additional spacing since we use explicit spacers
+    .alignment(Alignment::Leading);
+
+    println!("Dashboard Layout Structure:");
+    let dashboard_extracted = MockBackend::extract(&complete_dashboard, ctx);
+
+    println!(
+        "  Main VStack: {} spacing, {:?} alignment",
+        dashboard_extracted.spacing, dashboard_extracted.alignment
+    );
+
+    // Extract header section
+    let header_extracted = MockBackend::extract(&complete_dashboard.content.0, ctx);
+    println!(
+        "  Header Section: {} spacing, {:?} alignment",
+        header_extracted.spacing, header_extracted.alignment
+    );
+    println!("    Title: '{}'", header_extracted.content.0.content);
+    println!("    Subtitle: '{}'", header_extracted.content.1.content);
+
+    // Extract spacer
+    let spacer_extracted = MockBackend::extract(&complete_dashboard.content.1, ctx);
+    println!("  Spacer: {} min_size", spacer_extracted.min_size);
+
+    // Extract status section
+    let status_extracted = MockBackend::extract(&complete_dashboard.content.2, ctx);
+    println!(
+        "  Status Section: {} spacing, {:?} alignment",
+        status_extracted.spacing, status_extracted.alignment
+    );
+    println!("    Good status: '{}'", status_extracted.content.0.content);
+    println!(
+        "    Warning status: '{}'",
+        status_extracted.content.1.content
+    );
+
+    // Extract action section
+    let action_extracted = MockBackend::extract(&complete_dashboard.content.4, ctx);
+    println!(
+        "  Action Section: {} spacing, {:?} alignment",
+        action_extracted.spacing, action_extracted.alignment
+    );
+    println!("    Primary: '{}'", action_extracted.content.0.text);
+    println!("    Secondary: '{}'", action_extracted.content.1.text);
+
+    println!();
+    println!("Design System Patterns Demonstrated:");
+    println!("  📝 Typography hierarchy (24px title, 16px subtitle, 14px status)");
+    println!("  🎨 Semantic colors (green for success, orange for warning)");
+    println!("  📐 Consistent spacing (8px, 12px, 16px, 20px)");
+    println!("  🔘 Button styling patterns (primary vs secondary)");
+    println!("  📋 Layout composition (nested VStack/HStack containers)");
+    println!("  ↔️  Flexible spacing (using Spacer components)");
+    println!();
+    println!(
+        "  🔍 This demonstrates how layout containers enable complex, maintainable UI designs!"
+    );
 }
 
 #[cfg(test)]

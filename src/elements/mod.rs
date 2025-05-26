@@ -12,8 +12,10 @@
 //! These elements are pure data structures that describe what should
 //! be displayed, with all styling and content configured at creation time.
 
+pub mod layout;
 pub mod text;
 
+pub use layout::{Alignment, HStack, Spacer, VStack};
 pub use text::*;
 
 // End of File

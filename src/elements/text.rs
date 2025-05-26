@@ -106,12 +106,49 @@ mod tests {
         assert_eq!(text.style.font_size, 16.0);
         assert_eq!(text.style.color, Color::BLACK);
 
-        // Test text styling
-        let styled_text = Text::new("Styled text").font_size(24.0).color(Color::RED);
-
-        assert_eq!(styled_text.content, "Styled text");
+        // Test font size styling
+        let styled_text = Text::new("Styled").font_size(24.0);
         assert_eq!(styled_text.style.font_size, 24.0);
-        assert_eq!(styled_text.style.color, Color::RED);
+
+        // Test color styling
+        let colored_text = Text::new("Colored").color(Color::RED);
+        assert_eq!(colored_text.style.color, Color::RED);
+
+        // Test chained styling
+        let chained = Text::new("Chained").font_size(18.0).color(Color::BLUE);
+        assert_eq!(chained.style.font_size, 18.0);
+        assert_eq!(chained.style.color, Color::BLUE);
+    }
+
+    #[test]
+    fn text_edge_cases() {
+        use crate::{
+            backends::mock::MockBackend,
+            extraction::{RenderContext, ViewExtractor},
+        };
+
+        let ctx = RenderContext::new();
+
+        // Empty string text
+        let empty_text = Text::new("");
+        let extracted = MockBackend::extract(&empty_text, &ctx);
+        assert_eq!(extracted.content, "");
+
+        // Very long text content
+        let long_content = "a".repeat(10000);
+        let long_text = Text::new(&long_content);
+        let extracted = MockBackend::extract(&long_text, &ctx);
+        assert_eq!(extracted.content.len(), 10000);
+
+        // Very small font size
+        let tiny_font = Text::new("Test").font_size(1.0);
+        let extracted = MockBackend::extract(&tiny_font, &ctx);
+        assert_eq!(extracted.font_size, 1.0);
+
+        // Very large font size
+        let huge_font = Text::new("Test").font_size(200.0);
+        let extracted = MockBackend::extract(&huge_font, &ctx);
+        assert_eq!(extracted.font_size, 200.0);
     }
 }
 
