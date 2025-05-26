@@ -40,8 +40,20 @@
 //!
 //! This creates a unidirectional data flow: User interactions generate messages,
 //! messages update the model, and the updated model generates a new view.
+//!
+//! ## Component Architecture
+//!
+//! This counter demonstrates component composition in Ironwood:
+//!
+//! - `CounterModel` contains button components as fields
+//! - Button interactions bubble up as `CounterMessage` variants
+//! - The `update` method routes messages to appropriate components
+//! - UI state is derived from model state, not stored separately
+//!
+//! This pattern allows you to build complex UIs from simple, reusable components
+//! while maintaining the predictability of the Elm Architecture.
 
-use ironwood::prelude::*;
+use ironwood::{backends::mock::MockBackend, prelude::*};
 
 /// Messages that can be sent to update the counter.
 ///
@@ -91,14 +103,14 @@ pub enum CounterMessage {
     /// This represents the most common counter operation. We could have made this
     /// more generic (e.g., `Add(i32)`), but explicit operations make the API clearer
     /// and ensure the counter's behavior is predictable.
-    Increment,
+    IncrementButton(ButtonMessage),
 
     /// Decrement the counter by 1.
     ///
     /// Like `Increment`, this is explicit rather than generic. This makes the
     /// counter's behavior predictable and prevents confusion about what operations
     /// are supported.
-    Decrement,
+    DecrementButton(ButtonMessage),
 
     /// Reset the counter to 0.
     ///
@@ -158,6 +170,12 @@ pub struct CounterModel {
     /// In a real application, you might choose the type based on your specific
     /// requirements (e.g., `u64` for large positive-only counters).
     pub count: i32,
+
+    /// The increment button component
+    pub increment_button: Button,
+
+    /// The decrement button component
+    pub decrement_button: Button,
 }
 
 impl CounterModel {
@@ -187,6 +205,12 @@ impl CounterModel {
     pub fn new(initial_count: i32) -> Self {
         Self {
             count: initial_count,
+            increment_button: Button::new("+")
+                .background_color(Color::GREEN)
+                .with_text(|text| text.color(Color::WHITE).font_size(20.0)),
+            decrement_button: Button::new("-")
+                .background_color(Color::RED)
+                .with_text(|text| text.color(Color::WHITE).font_size(20.0)),
         }
     }
 
@@ -215,6 +239,39 @@ impl CounterModel {
     /// ```
     pub fn zero() -> Self {
         Self::new(0)
+    }
+
+    /// Get the text display for the current count value.
+    ///
+    /// ## What This Function Does
+    ///
+    /// This method creates a Text view that displays the current count value.
+    /// Rather than storing the display text as state, we derive it from the
+    /// count value whenever it's needed. This follows the Elm Architecture
+    /// principle that views should be derived from state, not stored as state.
+    ///
+    /// ## Why Derive Views Instead of Storing Them?
+    ///
+    /// Deriving views from state provides several benefits:
+    ///
+    /// - **Single Source of Truth**: Only the count value needs to be maintained
+    /// - **Consistency**: The display is always in sync with the actual count
+    /// - **Simplicity**: No need to remember to update display text separately
+    /// - **Immutability**: No risk of inconsistent state between count and display
+    ///
+    /// ## Example Usage
+    ///
+    /// ```
+    /// use ironwood::prelude::*;
+    ///
+    /// let model = CounterModel::new(42);
+    /// let display = model.count_display();
+    /// // display.content will be "42"
+    /// ```
+    pub fn count_display(&self) -> Text {
+        Text::new(format!("{}", self.count))
+            .font_size(24.0)
+            .color(Color::BLACK)
     }
 }
 
@@ -290,41 +347,70 @@ impl Model for CounterModel {
         // We use pattern matching to handle each message type. This ensures that
         // if we add new message types, the compiler will force us to handle them here.
         match message {
-            CounterMessage::Increment => {
-                // Create a new model with the count incremented by 1.
-                // We could use `self.count.saturating_add(1)` to prevent overflow,
-                // but for this example we'll use normal arithmetic.
-                Self {
-                    count: self.count + 1,
+            CounterMessage::IncrementButton(button_msg) => {
+                // Handle button interaction messages
+                match button_msg {
+                    ButtonMessage::Clicked => {
+                        // Create a new model with the count incremented by 1.
+                        // Using saturating arithmetic to handle overflow gracefully.
+                        Self {
+                            count: self.count.saturating_add(1),
+                            increment_button: self.increment_button.update(button_msg),
+                            ..self
+                        }
+                    }
+                    ButtonMessage::Interaction(_) => {
+                        // Handle other button interactions (hover, focus, etc.)
+                        Self {
+                            increment_button: self.increment_button.update(button_msg),
+                            ..self
+                        }
+                    }
                 }
             }
-            CounterMessage::Decrement => {
-                // Create a new model with the count decremented by 1.
-                // Note that this can make the count negative, which is intentional
-                // for this example. In some applications, you might want to prevent
-                // negative values using `self.count.saturating_sub(1)` or by checking
-                // the current value before decrementing.
-                Self {
-                    count: self.count - 1,
+            CounterMessage::DecrementButton(button_msg) => {
+                // Handle button interaction messages
+                match button_msg {
+                    ButtonMessage::Clicked => {
+                        // Create a new model with the count decremented by 1.
+                        // Using saturating arithmetic to handle underflow gracefully.
+                        // This allows negative values, which is intentional for this example.
+                        Self {
+                            count: self.count.saturating_sub(1),
+                            decrement_button: self.decrement_button.update(button_msg),
+                            ..self
+                        }
+                    }
+                    ButtonMessage::Interaction(_) => {
+                        // Handle other button interactions (hover, focus, etc.)
+                        Self {
+                            decrement_button: self.decrement_button.update(button_msg),
+                            ..self
+                        }
+                    }
                 }
             }
             CounterMessage::Reset => {
-                // Reset always produces the same result regardless of current state.
-                // This demonstrates how some operations don't depend on the current
-                // model state. We could also write this as `Self::zero()` or
-                // `Self::new(0)` for the same effect.
-                Self { count: 0 }
+                // Reset the count to 0 while preserving button interaction states.
+                // This demonstrates selective state updates - only the count changes,
+                // button states (hover, focus, etc.) are preserved.
+                Self { count: 0, ..self }
             }
             CounterMessage::SetValue(value) => {
                 // Use the value from the message to set the new count.
                 // This demonstrates how messages can carry data that influences
                 // the state update. The `value` parameter becomes part of the
                 // message when it's created, and we extract it here during the update.
-                Self { count: value }
+                Self {
+                    count: value,
+                    ..self
+                }
             }
         }
     }
 }
+
+impl View for CounterModel {}
 
 /// Demonstrate the counter example in action.
 ///
@@ -368,8 +454,28 @@ fn main() {
     // In a real application, you might load the initial state from a file,
     // database, or user preferences.
     let mut model = CounterModel::zero();
-    println!("Initial state: {:?}", model);
+    println!("Initial state: count = {}", model.count);
     println!("  └─ Starting with a fresh counter at zero");
+    println!();
+
+    // Extract the UI components to show their state
+    let ctx = RenderContext::new();
+    let increment_extracted = MockBackend::extract(&model.increment_button, &ctx);
+    let decrement_extracted = MockBackend::extract(&model.decrement_button, &ctx);
+    let display_extracted = MockBackend::extract(&model.count_display(), &ctx);
+
+    println!("UI Components:");
+    println!(
+        "  Increment button: '{}' (enabled: {})",
+        increment_extracted.text,
+        increment_extracted.interaction_state.is_enabled()
+    );
+    println!(
+        "  Decrement button: '{}' (enabled: {})",
+        decrement_extracted.text,
+        decrement_extracted.interaction_state.is_enabled()
+    );
+    println!("  Count display: '{}'", display_extracted.content);
     println!();
 
     // Simulate user interactions by applying messages sequentially.
@@ -379,47 +485,46 @@ fn main() {
     println!();
 
     // Demonstrate increment operation
-    println!("User clicks 'Increment' button...");
-    model = model.update(CounterMessage::Increment);
-    println!("After increment: {:?}", model);
+    println!("User clicks '+' button...");
+    model = model.update(CounterMessage::IncrementButton(ButtonMessage::Clicked));
+    println!("After increment: count = {}", model.count);
     println!("  └─ Counter increased from 0 to 1");
     println!();
 
     // Chain another increment to show accumulation
-    println!("User clicks 'Increment' button again...");
-    model = model.update(CounterMessage::Increment);
-    println!("After increment: {:?}", model);
+    println!("User clicks '+' button again...");
+    model = model.update(CounterMessage::IncrementButton(ButtonMessage::Clicked));
+    println!("After increment: count = {}", model.count);
     println!("  └─ Counter increased from 1 to 2");
     println!();
 
     // Demonstrate decrement operation
-    println!("User clicks 'Decrement' button...");
-    model = model.update(CounterMessage::Decrement);
-    println!("After decrement: {:?}", model);
+    println!("User clicks '-' button...");
+    model = model.update(CounterMessage::DecrementButton(ButtonMessage::Clicked));
+    println!("After decrement: count = {}", model.count);
     println!("  └─ Counter decreased from 2 to 1");
     println!();
 
-    // Demonstrate set value operation with data
-    println!("User enters '10' and clicks 'Set Value' button...");
+    // Demonstrate programmatic value setting (not from UI)
+    println!("Application programmatically sets counter to 10...");
     model = model.update(CounterMessage::SetValue(10));
-    println!("After set to 10: {:?}", model);
+    println!("After set to 10: count = {}", model.count);
     println!("  └─ Counter set directly to 10, ignoring previous value");
     println!();
 
-    // Demonstrate reset operation
-    println!("User clicks 'Reset' button...");
+    // Demonstrate programmatic reset (not from UI)
+    println!("Application programmatically resets counter...");
     model = model.update(CounterMessage::Reset);
-    println!("After reset: {:?}", model);
+    println!("After reset: count = {}", model.count);
     println!("  └─ Counter reset to 0, regardless of previous value");
     println!();
 
-    println!("Counter example completed!");
+    // Show final UI state
+    let display_extracted = MockBackend::extract(&model.count_display(), &ctx);
+    println!("Final count display: '{}'", display_extracted.content);
     println!();
-    println!("Key takeaways:");
-    println!("• All state changes go through explicit messages");
-    println!("• The update function is pure and predictable");
-    println!("• Previous states are preserved (enabling undo/redo)");
-    println!("• The pattern scales to complex applications");
+
+    println!("Counter example completed!");
 }
 
 #[cfg(test)]
@@ -446,15 +551,15 @@ mod tests {
     fn counter_message_increment() {
         // Test increment operation in isolation for predictable behavior
         let model = CounterModel::new(5);
-        let updated = model.update(CounterMessage::Increment);
+        let updated = model.update(CounterMessage::IncrementButton(ButtonMessage::Clicked));
         assert_eq!(updated.count, 6);
 
         // Chain operations to verify each update returns a new model
         let model = CounterModel::zero();
         let updated = model
-            .update(CounterMessage::Increment)
-            .update(CounterMessage::Increment)
-            .update(CounterMessage::Increment);
+            .update(CounterMessage::IncrementButton(ButtonMessage::Clicked))
+            .update(CounterMessage::IncrementButton(ButtonMessage::Clicked))
+            .update(CounterMessage::IncrementButton(ButtonMessage::Clicked));
         assert_eq!(updated.count, 3);
     }
 
@@ -462,12 +567,12 @@ mod tests {
     fn counter_message_decrement() {
         // Test decrement including edge case of going negative
         let model = CounterModel::new(5);
-        let updated = model.update(CounterMessage::Decrement);
+        let updated = model.update(CounterMessage::DecrementButton(ButtonMessage::Clicked));
         assert_eq!(updated.count, 4);
 
         // Verify no special casing needed for negative values
         let model = CounterModel::zero();
-        let updated = model.update(CounterMessage::Decrement);
+        let updated = model.update(CounterMessage::DecrementButton(ButtonMessage::Clicked));
         assert_eq!(updated.count, -1);
     }
 
@@ -508,14 +613,14 @@ mod tests {
         // Test complex sequence to verify update function composes correctly
         let model = CounterModel::zero();
         let updated = model
-            .update(CounterMessage::Increment) // 0 -> 1
-            .update(CounterMessage::Increment) // 1 -> 2
+            .update(CounterMessage::IncrementButton(ButtonMessage::Clicked)) // 0 -> 1
+            .update(CounterMessage::IncrementButton(ButtonMessage::Clicked)) // 1 -> 2
             .update(CounterMessage::SetValue(10)) // 2 -> 10
-            .update(CounterMessage::Decrement) // 10 -> 9
-            .update(CounterMessage::Decrement) // 9 -> 8
+            .update(CounterMessage::DecrementButton(ButtonMessage::Clicked)) // 10 -> 9
+            .update(CounterMessage::DecrementButton(ButtonMessage::Clicked)) // 9 -> 8
             .update(CounterMessage::Reset) // 8 -> 0
             .update(CounterMessage::SetValue(-5)) // 0 -> -5
-            .update(CounterMessage::Increment); // -5 -> -4
+            .update(CounterMessage::IncrementButton(ButtonMessage::Clicked)); // -5 -> -4
 
         assert_eq!(updated.count, -4);
     }
@@ -526,7 +631,9 @@ mod tests {
         let original = CounterModel::new(5);
         let original_count = original.count;
 
-        let _updated = original.clone().update(CounterMessage::Increment);
+        let _updated = original
+            .clone()
+            .update(CounterMessage::IncrementButton(ButtonMessage::Clicked));
 
         // Original model unchanged - crucial for debugging and undo functionality
         assert_eq!(original.count, original_count);
@@ -537,22 +644,79 @@ mod tests {
         // Verify messages have properties required by framework
 
         // Equality enables message comparison and deduplication
-        assert_eq!(CounterMessage::Increment, CounterMessage::Increment);
+        assert_eq!(
+            CounterMessage::IncrementButton(ButtonMessage::Clicked),
+            CounterMessage::IncrementButton(ButtonMessage::Clicked)
+        );
         assert_eq!(CounterMessage::SetValue(42), CounterMessage::SetValue(42));
-        assert_ne!(CounterMessage::Increment, CounterMessage::Decrement);
+        assert_ne!(
+            CounterMessage::IncrementButton(ButtonMessage::Clicked),
+            CounterMessage::DecrementButton(ButtonMessage::Clicked)
+        );
         assert_ne!(CounterMessage::SetValue(1), CounterMessage::SetValue(2));
 
         // Cloning enables message queuing and replay functionality
         let msg = CounterMessage::SetValue(100);
         let cloned = msg.clone();
         assert_eq!(msg, cloned);
+    }
 
-        // Debug formatting enables development tools and logging
-        assert_eq!(format!("{:?}", CounterMessage::Increment), "Increment");
-        assert_eq!(
-            format!("{:?}", CounterMessage::SetValue(42)),
-            "SetValue(42)"
-        );
+    #[test]
+    fn counter_overflow_handling() {
+        // Test saturating arithmetic prevents overflow panics
+        let model = CounterModel::new(i32::MAX);
+        let updated = model.update(CounterMessage::IncrementButton(ButtonMessage::Clicked));
+        assert_eq!(updated.count, i32::MAX); // Should saturate, not overflow
+
+        let model = CounterModel::new(i32::MIN);
+        let updated = model.update(CounterMessage::DecrementButton(ButtonMessage::Clicked));
+        assert_eq!(updated.count, i32::MIN); // Should saturate, not underflow
+    }
+
+    #[test]
+    fn counter_button_interaction_messages() {
+        // Test that non-click button messages preserve count but update button state
+        let model = CounterModel::new(5);
+        let original_count = model.count;
+
+        // Test hover interaction doesn't change count
+        let updated =
+            model
+                .clone()
+                .update(CounterMessage::IncrementButton(ButtonMessage::Interaction(
+                    InteractionMessage::HoverChanged(true),
+                )));
+        assert_eq!(updated.count, original_count);
+
+        // Test focus interaction doesn't change count
+        let updated =
+            model
+                .clone()
+                .update(CounterMessage::DecrementButton(ButtonMessage::Interaction(
+                    InteractionMessage::FocusChanged(true),
+                )));
+        assert_eq!(updated.count, original_count);
+    }
+
+    #[test]
+    fn counter_ui_components() {
+        // Test that UI components are properly initialized and updated
+        let model = CounterModel::new(5);
+        let ctx = RenderContext::new();
+
+        // Test initial UI state
+        let increment_extracted = MockBackend::extract(&model.increment_button, &ctx);
+        let decrement_extracted = MockBackend::extract(&model.decrement_button, &ctx);
+        let display_extracted = MockBackend::extract(&model.count_display(), &ctx);
+
+        assert_eq!(increment_extracted.text, "+");
+        assert_eq!(decrement_extracted.text, "-");
+        assert_eq!(display_extracted.content, "5");
+
+        // Test UI updates after count change
+        let updated = model.update(CounterMessage::IncrementButton(ButtonMessage::Clicked));
+        let display_extracted = MockBackend::extract(&updated.count_display(), &ctx);
+        assert_eq!(display_extracted.content, "6");
     }
 }
 

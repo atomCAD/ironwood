@@ -47,6 +47,7 @@ dependencies = [
 name = "ironwood"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "getrandom",
  "wasm-bindgen-test",
 ]
