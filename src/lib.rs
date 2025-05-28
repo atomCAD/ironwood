@@ -80,7 +80,7 @@ pub use message::Message;
 pub use model::Model;
 pub use style::{Color, TextStyle};
 pub use view::View;
-pub use widgets::{Button, ButtonMessage};
+pub use widgets::{Button, ButtonMessage, ButtonView};
 
 /// Prelude module for Ironwood UI Framework
 ///
@@ -107,6 +107,7 @@ pub use widgets::{Button, ButtonMessage};
 ///
 /// impl Model for AppModel {
 ///     type Message = AppMessage;
+///     type View = Text;
 ///
 ///     fn update(self, message: Self::Message) -> Self {
 ///         match message {
@@ -114,14 +115,11 @@ pub use widgets::{Button, ButtonMessage};
 ///             AppMessage::Decrement => Self { count: self.count - 1 },
 ///         }
 ///     }
-/// }
 ///
-/// #[derive(Debug, Clone)]
-/// struct TextView {
-///     text: String,
+///     fn view(&self) -> Self::View {
+///         Text::new(format!("Count: {}", self.count))
+///     }
 /// }
-///
-/// impl View for TextView {}
 /// ```
 pub mod prelude {
     // Re-export the core traits that users will need in almost every Ironwood application
@@ -135,7 +133,7 @@ pub mod prelude {
     pub use crate::model::Model;
     pub use crate::style::{Color, TextStyle};
     pub use crate::view::View;
-    pub use crate::widgets::{Button, ButtonMessage};
+    pub use crate::widgets::{Button, ButtonMessage, ButtonView};
 }
 
 // End of File

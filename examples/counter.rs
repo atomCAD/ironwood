@@ -273,69 +273,6 @@ impl CounterModel {
             .font_size(24.0)
             .color(Color::BLACK)
     }
-
-    /// Create a complete UI layout for the counter.
-    ///
-    /// ## What This Method Demonstrates
-    ///
-    /// This method shows how to compose a complete user interface using layout containers.
-    /// It demonstrates several important UI patterns:
-    ///
-    /// - **Vertical Layout**: Using `VStack` to arrange elements top-to-bottom
-    /// - **Horizontal Layout**: Using `HStack` to arrange buttons side-by-side
-    /// - **Spacing**: Adding visual breathing room between elements
-    /// - **Alignment**: Centering content for visual balance
-    /// - **Component Composition**: Combining text and buttons into a cohesive interface
-    ///
-    /// ## Layout Structure
-    ///
-    /// ```text
-    /// VStack (centered, 16px spacing)
-    /// ├── Text: "Counter Example"     (title)
-    /// ├── Text: "42"                  (current count, large)
-    /// └── HStack (centered, 12px spacing)
-    ///     ├── Button: "−"            (decrement)
-    ///     └── Button: "+"            (increment)
-    /// ```
-    ///
-    /// This creates a classic counter interface that's both functional and visually appealing.
-    ///
-    /// ## Why Use Layout Containers?
-    ///
-    /// Layout containers provide several benefits over manual positioning:
-    ///
-    /// - **Responsive**: Automatically adapts to different screen sizes
-    /// - **Consistent**: Uniform spacing and alignment across the interface
-    /// - **Maintainable**: Easy to modify layout without affecting individual components
-    /// - **Accessible**: Proper semantic structure for screen readers
-    /// - **Cross-platform**: Same layout works across different backends
-    ///
-    /// ## Example Usage
-    ///
-    /// ```
-    /// use ironwood::prelude::*;
-    ///
-    /// let model = CounterModel::new(42);
-    /// let ui = model.view();
-    /// // The ui can now be rendered by any backend
-    /// ```
-    #[allow(clippy::type_complexity)]
-    pub fn view(&self) -> VStack<(Text, Text, HStack<(Button, Button)>)> {
-        VStack::new((
-            // Title text
-            Text::new("Counter Example")
-                .font_size(20.0)
-                .color(Color::rgb(0.3, 0.3, 0.3)),
-            // Current count display (large and prominent)
-            self.count_display(),
-            // Button row with decrement and increment
-            HStack::new((self.decrement_button.clone(), self.increment_button.clone()))
-                .spacing(12.0)
-                .alignment(Alignment::Center),
-        ))
-        .spacing(16.0)
-        .alignment(Alignment::Center)
-    }
 }
 
 impl Default for CounterModel {
@@ -364,6 +301,7 @@ impl Default for CounterModel {
 
 impl Model for CounterModel {
     type Message = CounterMessage;
+    type View = VStack<(Text, Text, HStack<(ButtonView, ButtonView)>)>;
 
     /// Update the counter based on the received message.
     ///
@@ -471,9 +409,70 @@ impl Model for CounterModel {
             }
         }
     }
-}
 
-impl View for CounterModel {}
+    /// Create a complete UI layout for the counter.
+    ///
+    /// ## What This Method Demonstrates
+    ///
+    /// This method shows how to compose a complete user interface using layout containers.
+    /// It demonstrates several important UI patterns:
+    ///
+    /// - **Vertical Layout**: Using `VStack` to arrange elements top-to-bottom
+    /// - **Horizontal Layout**: Using `HStack` to arrange buttons side-by-side
+    /// - **Spacing**: Adding visual breathing room between elements
+    /// - **Alignment**: Centering content for visual balance
+    /// - **Component Composition**: Combining text and buttons into a cohesive interface
+    ///
+    /// ## Layout Structure
+    ///
+    /// ```text
+    /// VStack (centered, 16px spacing)
+    /// ├── Text: "Counter Example"     (title)
+    /// ├── Text: "42"                  (current count, large)
+    /// └── HStack (centered, 12px spacing)
+    ///     ├── Button: "−"            (decrement)
+    ///     └── Button: "+"            (increment)
+    /// ```
+    ///
+    /// This creates a classic counter interface that's both functional and visually appealing.
+    ///
+    /// ## Why Use Layout Containers?
+    ///
+    /// Layout containers provide several benefits over manual positioning:
+    ///
+    /// - **Responsive**: Automatically adapts to different screen sizes
+    /// - **Consistent**: Uniform spacing and alignment across the interface
+    /// - **Maintainable**: Easy to modify layout without affecting individual components
+    /// - **Accessible**: Proper semantic structure for screen readers
+    /// - **Cross-platform**: Same layout works across different backends
+    ///
+    /// ## Example Usage
+    ///
+    /// ```
+    /// use ironwood::prelude::*;
+    ///
+    /// let model = CounterModel::new(42);
+    /// let ui = model.view();
+    /// // The ui can now be rendered by any backend
+    /// ```
+    #[allow(clippy::type_complexity)]
+    fn view(&self) -> Self::View {
+        VStack::new((
+            // Title text
+            Text::new("Counter Example")
+                .font_size(20.0)
+                .color(Color::rgb(0.3, 0.3, 0.3)),
+            // Current count display (large and prominent)
+            self.count_display(),
+            // Button row with decrement and increment
+            HStack::new((self.decrement_button.view(), self.increment_button.view()))
+                .spacing(12.0)
+                .alignment(Alignment::Center),
+        ))
+        .spacing(16.0)
+        .alignment(Alignment::Center)
+    }
+}
 
 /// Demonstrate the counter example in action.
 ///
@@ -548,8 +547,8 @@ fn main() {
     println!();
 
     // Also extract individual components to show their state
-    let increment_extracted = MockBackend::extract(&model.increment_button, &ctx);
-    let decrement_extracted = MockBackend::extract(&model.decrement_button, &ctx);
+    let increment_extracted = MockBackend::extract(&model.increment_button.view(), &ctx);
+    let decrement_extracted = MockBackend::extract(&model.decrement_button.view(), &ctx);
     let display_extracted = MockBackend::extract(&model.count_display(), &ctx);
 
     println!("Individual Component States:");
@@ -809,8 +808,8 @@ mod tests {
         let ctx = RenderContext::new();
 
         // Test initial UI state
-        let increment_extracted = MockBackend::extract(&model.increment_button, &ctx);
-        let decrement_extracted = MockBackend::extract(&model.decrement_button, &ctx);
+        let increment_extracted = MockBackend::extract(&model.increment_button.view(), &ctx);
+        let decrement_extracted = MockBackend::extract(&model.decrement_button.view(), &ctx);
         let display_extracted = MockBackend::extract(&model.count_display(), &ctx);
 
         assert_eq!(increment_extracted.text, "+");

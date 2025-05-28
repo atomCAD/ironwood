@@ -28,10 +28,12 @@ fn tuple_composition_integration() {
     );
 
     let toolbar = (
-        Button::new("New").background_color(Color::GREEN),
-        Button::new("Open").background_color(Color::BLUE),
-        Button::new("Save").background_color(Color::rgb(0.8, 0.8, 0.8)),
-        Button::new("Delete").background_color(Color::RED),
+        Button::new("New").background_color(Color::GREEN).view(),
+        Button::new("Open").background_color(Color::BLUE).view(),
+        Button::new("Save")
+            .background_color(Color::rgb(0.8, 0.8, 0.8))
+            .view(),
+        Button::new("Delete").background_color(Color::RED).view(),
     );
 
     let status_bar = (
@@ -111,8 +113,12 @@ fn layout_containers_integration() {
     .spacing(10.0);
 
     let button_row = HStack::new((
-        Button::new("Cancel").background_color(Color::rgb(0.8, 0.8, 0.8)),
-        Button::new("Register").background_color(Color::GREEN),
+        Button::new("Cancel")
+            .background_color(Color::rgb(0.8, 0.8, 0.8))
+            .view(),
+        Button::new("Register")
+            .background_color(Color::GREEN)
+            .view(),
     ))
     .spacing(15.0);
 
@@ -163,7 +169,9 @@ fn mixed_composition_patterns() {
     // Header using tuple composition
     let header = (
         Text::new("Dashboard").font_size(24.0).color(Color::BLUE),
-        Button::new("Settings").background_color(Color::rgb(0.7, 0.7, 0.7)),
+        Button::new("Settings")
+            .background_color(Color::rgb(0.7, 0.7, 0.7))
+            .view(),
     );
 
     // Metrics section using VStack with tuple content
@@ -183,12 +191,16 @@ fn mixed_composition_patterns() {
             Text::new("Quick Actions")
                 .font_size(16.0)
                 .color(Color::BLACK),
-            Button::new("Export Data").background_color(Color::BLUE),
+            Button::new("Export Data")
+                .background_color(Color::BLUE)
+                .view(),
         ))
         .spacing(5.0),
         (
-            Button::new("Refresh").background_color(Color::GREEN),
-            Button::new("Help").background_color(Color::rgb(0.8, 0.8, 0.8)),
+            Button::new("Refresh").background_color(Color::GREEN).view(),
+            Button::new("Help")
+                .background_color(Color::rgb(0.8, 0.8, 0.8))
+                .view(),
         ),
     ))
     .spacing(20.0);
@@ -242,9 +254,12 @@ fn composition_with_model_integration() {
     #[derive(Debug, Clone)]
     struct AppModel {
         // Use tuple composition for the header
-        header: (Text, Button),
+        header_text: Text,
+        header_button: Button,
         // Use layout containers for the main content
-        main_content: VStack<(Text, HStack<(Button, Button)>)>,
+        text: Text,
+        button1: Button,
+        button2: Button,
         // Use simple component for footer
         footer: Text,
     }
@@ -261,67 +276,59 @@ fn composition_with_model_integration() {
 
     impl Model for AppModel {
         type Message = AppMessage;
+        type View = VStack<(
+            (Text, ButtonView),
+            VStack<(Text, HStack<(ButtonView, ButtonView)>)>,
+            Text,
+        )>;
 
         fn update(self, message: Self::Message) -> Self {
             match message {
                 AppMessage::HeaderButton => Self {
-                    header: (self.header.0, self.header.1.update(ButtonMessage::Clicked)),
+                    header_button: self.header_button.update(ButtonMessage::Clicked),
                     footer: Text::new("Header button clicked").color(Color::BLUE),
                     ..self
                 },
-                AppMessage::MainButton1 => {
-                    let (title, button_row) = self.main_content.content;
-                    let (button1, button2) = button_row.content;
-                    Self {
-                        main_content: VStack::new((
-                            title,
-                            HStack::new((button1.update(ButtonMessage::Clicked), button2))
-                                .spacing(button_row.spacing),
-                        ))
-                        .spacing(self.main_content.spacing),
-                        footer: Text::new("Main button 1 clicked").color(Color::GREEN),
-                        ..self
-                    }
-                }
-                AppMessage::MainButton2 => {
-                    let (title, button_row) = self.main_content.content;
-                    let (button1, button2) = button_row.content;
-                    Self {
-                        main_content: VStack::new((
-                            title,
-                            HStack::new((button1, button2.update(ButtonMessage::Clicked)))
-                                .spacing(button_row.spacing),
-                        ))
-                        .spacing(self.main_content.spacing),
-                        footer: Text::new("Main button 2 clicked").color(Color::RED),
-                        ..self
-                    }
-                }
+                AppMessage::MainButton1 => Self {
+                    button1: self.button1.update(ButtonMessage::Clicked),
+                    footer: Text::new("Main button 1 clicked").color(Color::GREEN),
+                    ..self
+                },
+                AppMessage::MainButton2 => Self {
+                    button2: self.button2.update(ButtonMessage::Clicked),
+                    footer: Text::new("Main button 2 clicked").color(Color::RED),
+                    ..self
+                },
                 AppMessage::UpdateStatus(status) => Self {
                     footer: Text::new(status).color(Color::BLACK),
                     ..self
                 },
             }
         }
+
+        fn view(&self) -> Self::View {
+            VStack::new((
+                (self.header_text.clone(), self.header_button.view()),
+                VStack::new((
+                    self.text.clone(),
+                    HStack::new((self.button1.view(), self.button2.view())).spacing(10.0),
+                ))
+                .spacing(15.0),
+                self.footer.clone(),
+            ))
+            .spacing(20.0)
+        }
     }
 
     // Create initial model with composed views
     let initial_model = AppModel {
-        header: (
-            Text::new("My App").font_size(20.0).color(Color::BLUE),
-            Button::new("Menu").background_color(Color::rgb(0.8, 0.8, 0.8)),
-        ),
-        main_content: VStack::new((
-            Text::new("Welcome to the app!")
-                .font_size(16.0)
-                .color(Color::BLACK),
-            HStack::new((
-                Button::new("Action 1").background_color(Color::GREEN),
-                Button::new("Action 2").background_color(Color::BLUE),
-            ))
-            .spacing(10.0),
-        ))
-        .spacing(15.0),
+        header_text: Text::new("My App").font_size(20.0).color(Color::BLUE),
+        header_button: Button::new("Menu").background_color(Color::rgb(0.8, 0.8, 0.8)),
+        text: Text::new("Welcome to the app!")
+            .font_size(16.0)
+            .color(Color::BLACK),
+        button1: Button::new("Action 1").background_color(Color::GREEN),
+        button2: Button::new("Action 2").background_color(Color::BLUE),
         footer: Text::new("Ready").color(Color::GREEN),
     };
 
@@ -349,25 +356,40 @@ fn composition_with_model_integration() {
     // Test extraction of the final composed model
     let ctx = RenderContext::new();
 
-    // Extract header (tuple)
-    let header_extracted = MockBackend::extract(&model.header, &ctx);
-    let (title_extracted, menu_btn_extracted) = header_extracted;
+    // Test extracting individual components from the model fields
+    let header_text_extracted = MockBackend::extract(&model.header_text, &ctx);
+    let header_button_extracted = MockBackend::extract(&model.header_button.view(), &ctx);
+    let main_text_extracted = MockBackend::extract(&model.text, &ctx);
+    let footer_extracted = MockBackend::extract(&model.footer, &ctx);
+
+    // Verify individual components
+    assert_eq!(header_text_extracted.content, "My App");
+    assert_eq!(header_button_extracted.text, "Menu");
+    assert_eq!(main_text_extracted.content, "Welcome to the app!");
+    assert_eq!(footer_extracted.content, "All systems operational");
+
+    // Extract the full composed view to test structure
+    let full_view_extracted = MockBackend::extract(&model.view(), &ctx);
+    assert_eq!(full_view_extracted.spacing, 20.0);
+
+    let (header_tuple, main_vstack, footer_text) = full_view_extracted.content;
+
+    // Verify header tuple structure
+    let (title_extracted, menu_btn_extracted) = header_tuple;
     assert_eq!(title_extracted.content, "My App");
     assert_eq!(menu_btn_extracted.text, "Menu");
 
-    // Extract main content (VStack with HStack inside)
-    let main_extracted = MockBackend::extract(&model.main_content, &ctx);
-    assert_eq!(main_extracted.spacing, 15.0);
-    let (welcome_text, button_row) = main_extracted.content;
+    // Verify main content VStack structure
+    assert_eq!(main_vstack.spacing, 15.0);
+    let (welcome_text, button_row) = main_vstack.content;
     assert_eq!(welcome_text.content, "Welcome to the app!");
     assert_eq!(button_row.spacing, 10.0);
     let (action1_btn, action2_btn) = button_row.content;
     assert_eq!(action1_btn.text, "Action 1");
     assert_eq!(action2_btn.text, "Action 2");
 
-    // Extract footer
-    let footer_extracted = MockBackend::extract(&model.footer, &ctx);
-    assert_eq!(footer_extracted.content, "All systems operational");
+    // Verify footer
+    assert_eq!(footer_text.content, "All systems operational");
 }
 
 /// Test that deeply nested composition patterns work correctly.

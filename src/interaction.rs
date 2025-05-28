@@ -12,7 +12,7 @@
 //! All transformation methods take `self` by value and return a new instance,
 //! ensuring components remain immutable and updates are explicit.
 
-use crate::{message::Message, model::Model, view::View};
+use crate::{message::Message, model::Model};
 use bitflags::bitflags;
 
 bitflags! {
@@ -220,6 +220,7 @@ impl Default for Interactive {
 
 impl Model for Interactive {
     type Message = InteractionMessage;
+    type View = ();
 
     /// Update the component's state based on the received message.
     ///
@@ -253,9 +254,11 @@ impl Model for Interactive {
 
         Self { state: new_state }
     }
-}
 
-impl View for Interactive {}
+    /// Interactive is a utility type for managing interaction state and doesn't
+    /// have a visual representation of its own. It returns a unit type.
+    fn view(&self) -> Self::View {}
+}
 
 /// Trait for components that can be enabled or disabled.
 ///

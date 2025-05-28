@@ -20,7 +20,7 @@ use crate::{
     interaction::InteractionState,
     style::{Color, TextStyle},
     view::View,
-    widgets::Button,
+    widgets::ButtonView,
 };
 
 /// Mock backend for testing view extraction.
@@ -91,16 +91,16 @@ pub struct MockButton {
     pub interaction_state: InteractionState,
 }
 
-impl ViewExtractor<Button> for MockBackend {
+impl ViewExtractor<ButtonView> for MockBackend {
     type Output = MockButton;
 
-    fn extract(view: &Button, _ctx: &RenderContext) -> Self::Output {
-        // Extract button component display information for testing
+    fn extract(view: &ButtonView, _ctx: &RenderContext) -> Self::Output {
+        // Extract button view display information for testing
         MockButton {
             text: view.text.content.clone(),
             background_color: view.background_color,
             text_style: view.text.style,
-            interaction_state: view.interactive.state,
+            interaction_state: view.interaction_state,
         }
     }
 }
@@ -647,8 +647,10 @@ where
 mod tests {
     use super::*;
     use crate::{
+        elements::Text,
         interaction::{Enableable, Focusable, Hoverable, InteractionMessage, Pressable},
         model::Model,
+        widgets::Button,
         widgets::ButtonMessage,
     };
 
@@ -684,7 +686,7 @@ mod tests {
         let button = Button::new("Click me");
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&button, &ctx);
+        let extracted = MockBackend::extract(&button.view(), &ctx);
 
         assert_eq!(extracted.text, "Click me");
         assert_eq!(extracted.background_color, Color::rgb(0.9, 0.9, 0.9));
@@ -701,7 +703,7 @@ mod tests {
         let button = Button::new("Disabled").disable();
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&button, &ctx);
+        let extracted = MockBackend::extract(&button.view(), &ctx);
 
         assert_eq!(extracted.text, "Disabled");
         assert!(!extracted.interaction_state.is_enabled());
@@ -717,7 +719,7 @@ mod tests {
 
         // Test clicked button (no state change)
         let clicked_button = Button::new("Clicked").update(ButtonMessage::Clicked);
-        let clicked_extracted = MockBackend::extract(&clicked_button, &ctx);
+        let clicked_extracted = MockBackend::extract(&clicked_button.view(), &ctx);
         assert_eq!(clicked_extracted.text, "Clicked");
         assert!(clicked_extracted.interaction_state.is_enabled());
         assert!(!clicked_extracted.interaction_state.is_pressed());
@@ -728,7 +730,7 @@ mod tests {
         let focused_button = Button::new("Focused").update(ButtonMessage::Interaction(
             InteractionMessage::FocusChanged(true),
         ));
-        let focused_extracted = MockBackend::extract(&focused_button, &ctx);
+        let focused_extracted = MockBackend::extract(&focused_button.view(), &ctx);
         assert_eq!(focused_extracted.text, "Focused");
         assert!(focused_extracted.interaction_state.is_enabled());
         assert!(!focused_extracted.interaction_state.is_pressed());
@@ -739,7 +741,7 @@ mod tests {
         let pressed_button = Button::new("Pressed").update(ButtonMessage::Interaction(
             InteractionMessage::PressStateChanged(true),
         ));
-        let pressed_extracted = MockBackend::extract(&pressed_button, &ctx);
+        let pressed_extracted = MockBackend::extract(&pressed_button.view(), &ctx);
         assert_eq!(pressed_extracted.text, "Pressed");
         assert!(pressed_extracted.interaction_state.is_enabled());
         assert!(pressed_extracted.interaction_state.is_pressed());
@@ -750,7 +752,7 @@ mod tests {
         let hovered_button = Button::new("Hovered").update(ButtonMessage::Interaction(
             InteractionMessage::HoverChanged(true),
         ));
-        let hovered_extracted = MockBackend::extract(&hovered_button, &ctx);
+        let hovered_extracted = MockBackend::extract(&hovered_button.view(), &ctx);
         assert_eq!(hovered_extracted.text, "Hovered");
         assert!(hovered_extracted.interaction_state.is_enabled());
         assert!(!hovered_extracted.interaction_state.is_pressed());
@@ -767,7 +769,7 @@ mod tests {
             .enable();
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&button, &ctx);
+        let extracted = MockBackend::extract(&button.view(), &ctx);
 
         assert_eq!(extracted.text, "Styled");
         assert_eq!(extracted.background_color, Color::BLUE);
@@ -784,7 +786,7 @@ mod tests {
 
         // Extract views
         let _extracted_text = MockBackend::extract(&original_text, &ctx);
-        let _extracted_button = MockBackend::extract(&original_button, &ctx);
+        let _extracted_button = MockBackend::extract(&original_button.view(), &ctx);
 
         // Original views should be unchanged
         assert_eq!(original_text.content, "Original");
@@ -862,7 +864,7 @@ mod tests {
         // Test tuple with mixed view types
         let text = Text::new("Hello").color(Color::RED);
         let button = Button::new("Click me").background_color(Color::BLUE);
-        let tuple = (text, button);
+        let tuple = (text, button.view());
         let ctx = RenderContext::new();
 
         let extracted = MockBackend::extract(&tuple, &ctx);
@@ -992,7 +994,7 @@ mod tests {
         // Test container with mixed content types
         let text = Text::new("Label").color(Color::GREEN);
         let button = Button::new("Action").background_color(Color::RED);
-        let vstack = VStack::new((text, button)).spacing(10.0);
+        let vstack = VStack::new((text, button.view())).spacing(10.0);
 
         let ctx = RenderContext::new();
         let extracted = MockBackend::extract(&vstack, &ctx);
@@ -1032,7 +1034,11 @@ mod tests {
 
         let row1 = HStack::new((Text::new("Col 1"), Text::new("Col 2"))).spacing(5.0);
 
-        let row2 = HStack::new((Button::new("Button 1"), Button::new("Button 2"))).spacing(5.0);
+        let row2 = HStack::new((
+            Button::new("Button 1").view(),
+            Button::new("Button 2").view(),
+        ))
+        .spacing(5.0);
 
         let content = VStack::new((row1, row2)).spacing(8.0);
         let footer = Text::new("Footer").color(Color::BLUE);

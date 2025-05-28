@@ -8,6 +8,11 @@
 //! in response to messages. They follow the Elm architecture pattern
 //! of immutable updates through pure functions.
 //!
+//! Models are separate from Views - a Model contains state and behavior,
+//! while a View is a pure data structure describing how that state should
+//! be rendered. Models implement a `view()` method that creates the
+//! appropriate View representation of their current state.
+//!
 //! The `update` method consumes the old model and returns a new one because:
 //!
 //! - **Eliminates data races**: No shared mutable state means no race conditions
@@ -22,13 +27,14 @@
 
 use std::fmt::Debug;
 
-use crate::message::Message;
+use crate::{message::Message, view::View};
 
 /// Trait for application models in Ironwood.
 ///
 /// Models are the single source of truth for application state.
 /// They must be cloneable for efficient updates and debuggable for development.
-/// The `update` method defines how the model changes in response to messages.
+/// The `update` method defines how the model changes in response to messages,
+/// and the `view` method creates the visual representation of the current state.
 ///
 /// # Examples
 ///
@@ -50,6 +56,7 @@ use crate::message::Message;
 ///
 /// impl Model for AppModel {
 ///     type Message = AppMessage;
+///     type View = Text;
 ///
 ///     fn update(self, message: Self::Message) -> Self {
 ///         match message {
@@ -57,22 +64,36 @@ use crate::message::Message;
 ///             AppMessage::Decrement => Self { count: self.count - 1 },
 ///         }
 ///     }
+///
+///     fn view(&self) -> Self::View {
+///         Text::new(format!("Count: {}", self.count))
+///     }
 /// }
 /// ```
 pub trait Model: Clone + Debug + Send + Sync + 'static {
     /// The message type that can update this model
     type Message: Message;
 
+    /// The view type that represents this model's visual state
+    type View: View;
+
     /// Update the model with a message, consuming the old model and returning a new one.
     ///
     /// This follows functional programming principles - the old model is consumed
     /// and a new model is returned, ensuring immutable updates.
     fn update(self, message: Self::Message) -> Self;
+
+    /// Create a view representation of this model's current state.
+    ///
+    /// This method creates a pure data structure that describes how the model
+    /// should be rendered, without containing any rendering logic itself.
+    fn view(&self) -> Self::View;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::elements::Text;
 
     #[test]
     fn model_trait_pattern() {
@@ -92,12 +113,17 @@ mod tests {
 
         impl Model for TestModel {
             type Message = TestMessage;
+            type View = Text;
 
             fn update(self, message: Self::Message) -> Self {
                 match message {
                     TestMessage::SetValue(value) => Self { value },
                     TestMessage::Reset => Self { value: 0 },
                 }
+            }
+
+            fn view(&self) -> Self::View {
+                Text::new(format!("Value: {}", self.value))
             }
         }
 
@@ -128,11 +154,16 @@ mod tests {
 
         impl Model for TestModel {
             type Message = TestMessage;
+            type View = Text;
 
             fn update(self, message: Self::Message) -> Self {
                 match message {
                     TestMessage::UpdateData(data) => Self { data },
                 }
+            }
+
+            fn view(&self) -> Self::View {
+                Text::new(format!("Data: {}", self.data))
             }
         }
 

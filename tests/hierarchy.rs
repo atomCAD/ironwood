@@ -54,6 +54,7 @@ fn component_hierarchy_integration() {
 
     impl Model for FormModel {
         type Message = FormMessage;
+        type View = VStack<(Text, HStack<(ButtonView, ButtonView)>)>;
 
         fn update(self, message: Self::Message) -> Self {
             match message {
@@ -119,6 +120,14 @@ fn component_hierarchy_integration() {
                 }
             }
         }
+
+        fn view(&self) -> Self::View {
+            VStack::new((
+                self.status_text.clone(),
+                HStack::new((self.submit_button.view(), self.cancel_button.view())).spacing(8.0),
+            ))
+            .spacing(16.0)
+        }
     }
 
     // Test the complete hierarchy workflow
@@ -180,6 +189,7 @@ fn component_state_preservation() {
 
     impl Model for MultiButtonModel {
         type Message = MultiButtonMessage;
+        type View = HStack<(ButtonView, ButtonView, ButtonView)>;
 
         fn update(self, message: Self::Message) -> Self {
             match message {
@@ -196,6 +206,15 @@ fn component_state_preservation() {
                     ..self
                 },
             }
+        }
+
+        fn view(&self) -> Self::View {
+            HStack::new((
+                self.button1.view(),
+                self.button2.view(),
+                self.button3.view(),
+            ))
+            .spacing(8.0)
         }
     }
 
@@ -274,14 +293,14 @@ fn hierarchy_view_extraction() {
     assert_eq!(title_extracted.font_size, 24.0);
     assert_eq!(title_extracted.color, Color::BLUE);
 
-    let save_extracted = MockBackend::extract(&dashboard.save_button, &ctx);
+    let save_extracted = MockBackend::extract(&dashboard.save_button.view(), &ctx);
     assert_eq!(save_extracted.text, "Save");
     assert_eq!(save_extracted.background_color, Color::GREEN);
     assert_eq!(save_extracted.text_style.color, Color::WHITE);
     assert!(save_extracted.interaction_state.is_focused());
     assert!(save_extracted.interaction_state.is_enabled());
 
-    let load_extracted = MockBackend::extract(&dashboard.load_button, &ctx);
+    let load_extracted = MockBackend::extract(&dashboard.load_button.view(), &ctx);
     assert_eq!(load_extracted.text, "Load");
     assert_eq!(load_extracted.background_color, Color::BLUE);
     assert_eq!(load_extracted.text_style.color, Color::WHITE);
@@ -317,6 +336,7 @@ fn deep_component_nesting() {
 
     impl Model for InnerComponent {
         type Message = InnerMessage;
+        type View = VStack<(ButtonView, Text)>;
 
         fn update(self, message: Self::Message) -> Self {
             match message {
@@ -329,6 +349,10 @@ fn deep_component_nesting() {
                     ..self
                 },
             }
+        }
+
+        fn view(&self) -> Self::View {
+            VStack::new((self.button.view(), self.text.clone())).spacing(4.0)
         }
     }
 
@@ -349,6 +373,7 @@ fn deep_component_nesting() {
 
     impl Model for MiddleComponent {
         type Message = MiddleMessage;
+        type View = HStack<(<InnerComponent as Model>::View, ButtonView)>;
 
         fn update(self, message: Self::Message) -> Self {
             match message {
@@ -361,6 +386,10 @@ fn deep_component_nesting() {
                     ..self
                 },
             }
+        }
+
+        fn view(&self) -> Self::View {
+            HStack::new((self.inner.view(), self.own_button.view())).spacing(8.0)
         }
     }
 
@@ -381,6 +410,7 @@ fn deep_component_nesting() {
 
     impl Model for OuterComponent {
         type Message = OuterMessage;
+        type View = VStack<(<MiddleComponent as Model>::View, Text)>;
 
         fn update(self, message: Self::Message) -> Self {
             match message {
@@ -393,6 +423,10 @@ fn deep_component_nesting() {
                     ..self
                 },
             }
+        }
+
+        fn view(&self) -> Self::View {
+            VStack::new((self.middle.view(), self.outer_text.clone())).spacing(12.0)
         }
     }
 

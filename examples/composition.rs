@@ -194,9 +194,9 @@ fn mixed_content_types() {
         .color(Color::BLACK);
 
     let button_row = HStack::new((
-        Button::new("Save").background_color(Color::GREEN),
-        Button::new("Cancel").background_color(Color::RED),
-        Button::new("Help").background_color(Color::BLUE),
+        Button::new("Save").background_color(Color::GREEN).view(),
+        Button::new("Cancel").background_color(Color::RED).view(),
+        Button::new("Help").background_color(Color::BLUE).view(),
     ))
     .spacing(12.0);
 

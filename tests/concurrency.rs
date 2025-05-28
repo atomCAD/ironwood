@@ -60,6 +60,7 @@ fn models_and_messages_are_thread_safe() {
 
     impl Model for SharedModel {
         type Message = SharedMessage;
+        type View = VStack<(Text, Text)>;
 
         fn update(self, message: Self::Message) -> Self {
             match message {
@@ -91,6 +92,14 @@ fn models_and_messages_are_thread_safe() {
                     priority: Priority::Normal,
                 },
             }
+        }
+
+        fn view(&self) -> Self::View {
+            VStack::new((
+                Text::new(format!("Counter: {}", self.counter)),
+                self.status.clone(),
+            ))
+            .spacing(8.0)
         }
     }
 
@@ -227,6 +236,7 @@ fn message_passing_between_threads() {
 
     impl Model for EventModel {
         type Message = EventMessage;
+        type View = VStack<(ButtonView, Text)>;
 
         fn update(self, message: Self::Message) -> Self {
             match message {
@@ -259,6 +269,10 @@ fn message_passing_between_threads() {
                     ..self
                 },
             }
+        }
+
+        fn view(&self) -> Self::View {
+            VStack::new((self.button.view(), self.status_text.clone())).spacing(12.0)
         }
     }
 
@@ -389,11 +403,10 @@ fn concurrent_view_extraction() {
 
             for extraction_id in 0..10 {
                 // Extract button
-                let button_extracted =
-                    MockBackend::extract(button_clone.as_ref(), ctx_clone.as_ref());
+                let button_extracted = MockBackend::extract(&button_clone.view(), &ctx_clone);
 
                 // Extract text
-                let text_extracted = MockBackend::extract(text_clone.as_ref(), ctx_clone.as_ref());
+                let text_extracted = MockBackend::extract(text_clone.as_ref(), &ctx_clone);
 
                 // Verify consistency
                 assert_eq!(button_extracted.text, "Complex Button");
@@ -505,6 +518,7 @@ fn concurrent_interaction_state_updates() {
 
     impl Model for InteractiveModel {
         type Message = InteractionMessage;
+        type View = VStack<(HStack<(ButtonView, ButtonView)>, Text, Text)>;
 
         fn update(self, message: Self::Message) -> Self {
             match message {
@@ -574,6 +588,16 @@ fn concurrent_interaction_state_updates() {
                     ..self
                 },
             }
+        }
+
+        fn view(&self) -> Self::View {
+            VStack::new((
+                HStack::new((self.primary_button.view(), self.secondary_button.view()))
+                    .spacing(8.0),
+                Text::new(format!("Interactions: {}", self.interaction_count)),
+                Text::new(format!("Last: {}", self.last_interaction)),
+            ))
+            .spacing(12.0)
         }
     }
 
@@ -647,13 +671,13 @@ fn concurrent_interaction_state_updates() {
     assert_eq!(final_model.interaction_count, 14); // 7 interactions per thread
 
     // Verify that both buttons are in their final states (not hovered, focused, or pressed)
-    let primary_extracted = MockBackend::extract(&final_model.primary_button, &ctx);
+    let primary_extracted = MockBackend::extract(&final_model.primary_button.view(), &ctx);
     assert!(primary_extracted.interaction_state.is_enabled());
     assert!(!primary_extracted.interaction_state.is_hovered());
     assert!(!primary_extracted.interaction_state.is_focused());
     assert!(!primary_extracted.interaction_state.is_pressed());
 
-    let secondary_extracted = MockBackend::extract(&final_model.secondary_button, &ctx);
+    let secondary_extracted = MockBackend::extract(&final_model.secondary_button.view(), &ctx);
     assert!(secondary_extracted.interaction_state.is_enabled());
     assert!(!secondary_extracted.interaction_state.is_hovered());
     assert!(!secondary_extracted.interaction_state.is_focused());

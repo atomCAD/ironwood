@@ -114,6 +114,7 @@ fn complete_user_interaction_workflow() {
 
     impl Model for AppModel {
         type Message = AppMessage;
+        type View = VStack<(Text, Text, HStack<(ButtonView, ButtonView, ButtonView)>)>;
 
         fn update(self, message: Self::Message) -> Self {
             match message {
@@ -170,6 +171,20 @@ fn complete_user_interaction_workflow() {
                 },
             }
         }
+
+        fn view(&self) -> Self::View {
+            VStack::new((
+                self.display_text.clone(),
+                self.status_message.clone(),
+                HStack::new((
+                    self.decrement_button.view(),
+                    self.reset_button.view(),
+                    self.increment_button.view(),
+                ))
+                .spacing(8.0),
+            ))
+            .spacing(16.0)
+        }
     }
 
     // Test complete workflow: Model → Message → Update → View → Extraction
@@ -190,7 +205,7 @@ fn complete_user_interaction_workflow() {
     // Verify button state changed but counter didn't
     assert_eq!(app.counter, 0);
     assert!(app.increment_button.is_hovered());
-    let button_extracted = MockBackend::extract(&app.increment_button, &ctx);
+    let button_extracted = MockBackend::extract(&app.increment_button.view(), &ctx);
     assert!(button_extracted.interaction_state.is_hovered());
 
     // 3. User clicks increment button
@@ -251,21 +266,21 @@ fn interaction_trait_integration() {
     let ctx = RenderContext::new();
 
     // Test that all interaction states are preserved through extraction
-    let enabled_extracted = MockBackend::extract(&enabled_button, &ctx);
+    let enabled_extracted = MockBackend::extract(&enabled_button.view(), &ctx);
     assert!(enabled_extracted.interaction_state.is_enabled());
 
-    let disabled_extracted = MockBackend::extract(&disabled_button, &ctx);
+    let disabled_extracted = MockBackend::extract(&disabled_button.view(), &ctx);
     assert!(!disabled_extracted.interaction_state.is_enabled());
 
-    let focused_extracted = MockBackend::extract(&focused_button, &ctx);
+    let focused_extracted = MockBackend::extract(&focused_button.view(), &ctx);
     assert!(focused_extracted.interaction_state.is_focused());
     assert!(focused_extracted.interaction_state.is_enabled());
 
-    let hovered_extracted = MockBackend::extract(&hovered_button, &ctx);
+    let hovered_extracted = MockBackend::extract(&hovered_button.view(), &ctx);
     assert!(hovered_extracted.interaction_state.is_hovered());
     assert!(hovered_extracted.interaction_state.is_enabled());
 
-    let pressed_extracted = MockBackend::extract(&pressed_button, &ctx);
+    let pressed_extracted = MockBackend::extract(&pressed_button.view(), &ctx);
     assert!(pressed_extracted.interaction_state.is_pressed());
     assert!(pressed_extracted.interaction_state.is_enabled());
 
@@ -276,7 +291,7 @@ fn interaction_trait_integration() {
         .hover()
         .with_pressed(false); // Explicitly not pressed
 
-    let complex_extracted = MockBackend::extract(&complex_button, &ctx);
+    let complex_extracted = MockBackend::extract(&complex_button.view(), &ctx);
     assert!(complex_extracted.interaction_state.is_enabled());
     assert!(complex_extracted.interaction_state.is_focused());
     assert!(complex_extracted.interaction_state.is_hovered());
@@ -287,7 +302,7 @@ fn interaction_trait_integration() {
         InteractionMessage::FocusChanged(true),
     ));
 
-    let updated_extracted = MockBackend::extract(&enabled_button, &ctx);
+    let updated_extracted = MockBackend::extract(&enabled_button.view(), &ctx);
     assert!(updated_extracted.interaction_state.is_focused());
 
     // Test conditional interaction state
@@ -297,7 +312,7 @@ fn interaction_trait_integration() {
         .with_hovered(true)
         .with_pressed(false);
 
-    let conditional_extracted = MockBackend::extract(&conditionally_enabled, &ctx);
+    let conditional_extracted = MockBackend::extract(&conditionally_enabled.view(), &ctx);
     assert!(conditional_extracted.interaction_state.is_enabled());
     assert!(!conditional_extracted.interaction_state.is_focused());
     assert!(conditional_extracted.interaction_state.is_hovered());
@@ -358,12 +373,12 @@ fn style_system_integration() {
     assert_eq!(custom_text_extracted.color, Color::rgba(0.2, 0.8, 0.4, 0.9));
 
     // Extract and verify all button styles are preserved
-    let primary_extracted = MockBackend::extract(&primary_button, &ctx);
+    let primary_extracted = MockBackend::extract(&primary_button.view(), &ctx);
     assert_eq!(primary_extracted.background_color, Color::BLUE);
     assert_eq!(primary_extracted.text_style.color, Color::WHITE);
     assert_eq!(primary_extracted.text_style.font_size, 16.0);
 
-    let secondary_extracted = MockBackend::extract(&secondary_button, &ctx);
+    let secondary_extracted = MockBackend::extract(&secondary_button.view(), &ctx);
     assert_eq!(
         secondary_extracted.background_color,
         Color::rgb(0.8, 0.8, 0.8)
@@ -371,12 +386,12 @@ fn style_system_integration() {
     assert_eq!(secondary_extracted.text_style.color, Color::BLACK);
     assert_eq!(secondary_extracted.text_style.font_size, 14.0);
 
-    let danger_extracted = MockBackend::extract(&danger_button, &ctx);
+    let danger_extracted = MockBackend::extract(&danger_button.view(), &ctx);
     assert_eq!(danger_extracted.background_color, Color::RED);
     assert_eq!(danger_extracted.text_style.color, Color::WHITE);
     assert_eq!(danger_extracted.text_style.font_size, 16.0);
 
-    let custom_extracted = MockBackend::extract(&custom_button, &ctx);
+    let custom_extracted = MockBackend::extract(&custom_button.view(), &ctx);
     assert_eq!(
         custom_extracted.background_color,
         Color::rgba(0.3, 0.1, 0.7, 1.0)
@@ -403,6 +418,7 @@ fn style_system_integration() {
 
     impl Model for StyledModel {
         type Message = StyledMessage;
+        type View = Text;
 
         fn update(self, message: Self::Message) -> Self {
             match message {
@@ -422,6 +438,10 @@ fn style_system_integration() {
                     }
                 }
             }
+        }
+
+        fn view(&self) -> Self::View {
+            self.dynamic_text.clone()
         }
     }
 
@@ -494,6 +514,7 @@ fn complex_multi_component_workflow() {
 
     impl Model for ComplexAppModel {
         type Message = ComplexAppMessage;
+        type View = VStack<(Text, Text, HStack<(ButtonView, ButtonView)>)>;
 
         fn update(self, message: Self::Message) -> Self {
             match message {
@@ -552,6 +573,16 @@ fn complex_multi_component_workflow() {
                 },
             }
         }
+
+        fn view(&self) -> Self::View {
+            VStack::new((
+                self.counter_text.clone(),
+                self.status_text.clone(),
+                HStack::new((self.primary_button.view(), self.secondary_button.view()))
+                    .spacing(12.0),
+            ))
+            .spacing(16.0)
+        }
     }
 
     let mut app = ComplexAppModel {
@@ -609,11 +640,11 @@ fn complex_multi_component_workflow() {
     assert_eq!(bulk_status_extracted.color, Color::rgba(0.0, 0.6, 0.6, 1.0));
 
     // Verify buttons maintain their styling through all updates
-    let primary_extracted = MockBackend::extract(&app.primary_button, &ctx);
+    let primary_extracted = MockBackend::extract(&app.primary_button.view(), &ctx);
     assert_eq!(primary_extracted.background_color, Color::GREEN);
     assert_eq!(primary_extracted.text_style.color, Color::WHITE);
 
-    let secondary_extracted = MockBackend::extract(&app.secondary_button, &ctx);
+    let secondary_extracted = MockBackend::extract(&app.secondary_button.view(), &ctx);
     assert_eq!(secondary_extracted.background_color, Color::RED);
     assert_eq!(secondary_extracted.text_style.color, Color::WHITE);
 }

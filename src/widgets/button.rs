@@ -5,17 +5,38 @@
 //! Button component for interactive UI elements
 //!
 //! The Button component provides interactive elements that can respond to user input
-//! and maintain their own state (enabled/disabled, pressed, styling). Buttons implement
-//! both the Model trait (for state management) and View trait (for rendering data).
+//! and maintain their own state (enabled/disabled, pressed, styling). Buttons are
+//! models that contain state and behavior, and they create ButtonView instances
+//! through their view() method to represent their visual state.
 
 use crate::{
     elements::Text,
-    interaction::{Enableable, Focusable, Hoverable, InteractionMessage, Interactive, Pressable},
+    interaction::{
+        Enableable, Focusable, Hoverable, InteractionMessage, InteractionState, Interactive,
+        Pressable,
+    },
     message::Message,
     model::Model,
     style::Color,
     view::View,
 };
+
+/// View representation of a button's visual state.
+///
+/// This is a pure data structure that describes how a button should appear,
+/// including its text content, styling, and current interaction state.
+/// The actual rendering is handled by backends.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ButtonView {
+    /// The text content of the button
+    pub text: Text,
+    /// Background color of the button
+    pub background_color: Color,
+    /// Current interaction state (enabled, pressed, focused, hovered)
+    pub interaction_state: InteractionState,
+}
+
+impl View for ButtonView {}
 
 /// Messages that represent user interactions with a Button component.
 ///
@@ -129,6 +150,7 @@ impl Button {
 
 impl Model for Button {
     type Message = ButtonMessage;
+    type View = ButtonView;
 
     /// Update the button's state based on the received message.
     ///
@@ -167,9 +189,19 @@ impl Model for Button {
             },
         }
     }
-}
 
-impl View for Button {}
+    /// Create a view representation of this button's current state.
+    ///
+    /// This method creates a ButtonView that contains all the visual information
+    /// needed to render the button, including its text, styling, and interaction state.
+    fn view(&self) -> Self::View {
+        ButtonView {
+            text: self.text.clone(),
+            background_color: self.background_color,
+            interaction_state: self.interactive.state,
+        }
+    }
+}
 
 impl Enableable for Button {
     /// Check if this button is currently enabled for user interaction.
@@ -560,7 +592,7 @@ mod tests {
 
         // This should compile - Button implements View
         fn accepts_view(_view: impl View) {}
-        accepts_view(button);
+        accepts_view(button.view());
     }
 
     #[test]

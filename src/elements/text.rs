@@ -4,9 +4,8 @@
 
 //! Text component for displaying styled text content
 //!
-//! The Text component is a pure data structure that describes how text should
-//! appear in the UI. It contains no rendering logic - that's handled by backends
-//! through the ViewExtractor pattern.
+//! The Text component is a view that represents styled text content.
+//! It's a pure data structure that describes how text should appear.
 
 use crate::{
     style::{Color, TextStyle},

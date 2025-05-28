@@ -16,6 +16,6 @@ pub mod layout;
 pub mod text;
 
 pub use layout::{Alignment, HStack, Spacer, VStack};
-pub use text::*;
+pub use text::Text;
 
 // End of File
