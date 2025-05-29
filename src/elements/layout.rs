@@ -318,17 +318,17 @@ mod tests {
 
         // Zero min_size spacer
         let flexible_spacer = Spacer::min_size(0.0);
-        let extracted = MockBackend::extract(&flexible_spacer, &ctx);
+        let extracted = MockBackend::extract(&flexible_spacer, &ctx).unwrap();
         assert_eq!(extracted.min_size, 0.0);
 
         // Large spacer size
         let large_spacer = Spacer::min_size(1000.0);
-        let extracted = MockBackend::extract(&large_spacer, &ctx);
+        let extracted = MockBackend::extract(&large_spacer, &ctx).unwrap();
         assert_eq!(extracted.min_size, 1000.0);
 
         // Fractional spacer size
         let fractional_spacer = Spacer::min_size(0.5);
-        let extracted = MockBackend::extract(&fractional_spacer, &ctx);
+        let extracted = MockBackend::extract(&fractional_spacer, &ctx).unwrap();
         assert_eq!(extracted.min_size, 0.5);
     }
 
@@ -338,17 +338,17 @@ mod tests {
 
         // Zero spacing
         let tight_spacing = VStack::new((Text::new("A"), Text::new("B"))).spacing(0.0);
-        let extracted = MockBackend::extract(&tight_spacing, &ctx);
+        let extracted = MockBackend::extract(&tight_spacing, &ctx).unwrap();
         assert_eq!(extracted.spacing, 0.0);
 
         // Large spacing
         let large_spacing = HStack::new((Text::new("A"), Text::new("B"))).spacing(100.0);
-        let extracted = MockBackend::extract(&large_spacing, &ctx);
+        let extracted = MockBackend::extract(&large_spacing, &ctx).unwrap();
         assert_eq!(extracted.spacing, 100.0);
 
         // Fractional spacing
         let fractional_spacing = VStack::new((Text::new("A"), Text::new("B"))).spacing(2.5);
-        let extracted = MockBackend::extract(&fractional_spacing, &ctx);
+        let extracted = MockBackend::extract(&fractional_spacing, &ctx).unwrap();
         assert_eq!(extracted.spacing, 2.5);
     }
 }

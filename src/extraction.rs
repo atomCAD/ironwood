@@ -12,7 +12,57 @@
 //! This separation enables the same view hierarchy to be rendered on different
 //! platforms (GPU, native widgets, web, testing) without changing application code.
 
+use std::any::TypeId;
+
 use crate::view::View;
+
+/// Errors that can occur during view extraction.
+///
+/// These errors represent various failure modes in the dynamic view extraction
+/// system, providing detailed context for debugging and error handling.
+#[derive(Debug, thiserror::Error)]
+pub enum ExtractionError {
+    /// A view type is not registered in the view registry.
+    ///
+    /// This occurs when attempting to extract a view type that hasn't been
+    /// registered with the backend's registry. The error includes both the
+    /// human-readable type name and the TypeId for debugging.
+    #[error("View type '{type_name}' is not registered in the view registry")]
+    UnregisteredType {
+        /// Human-readable name of the unregistered type
+        type_name: &'static str,
+        /// TypeId of the unregistered type for debugging
+        type_id: TypeId,
+    },
+
+    /// Failed to downcast a view to the expected concrete type.
+    ///
+    /// This indicates a type registry invariant violation where the stored
+    /// extraction function expects a different type than what was provided.
+    #[error("Failed to downcast view to expected type '{expected_type}'")]
+    DowncastFailed {
+        /// The expected concrete type name
+        expected_type: &'static str,
+        /// The actual TypeId that was encountered
+        actual_type_id: TypeId,
+    },
+
+    /// Failed to downcast extracted output to the expected type.
+    ///
+    /// This occurs when the extraction function returns a different type
+    /// than expected, indicating a mismatch in the registry configuration.
+    #[error("Failed to downcast extracted output to expected type '{expected_type}'")]
+    OutputDowncastFailed {
+        /// The expected output type name
+        expected_type: &'static str,
+    },
+}
+
+/// Result type for view extraction operations.
+///
+/// This type alias provides a convenient way to work with extraction results
+/// throughout the codebase, ensuring consistent error handling.
+pub type ExtractionResult<T> = Result<T, ExtractionError>;
 
 /// Context provided to view extractors during rendering.
 ///
@@ -64,14 +114,14 @@ impl Default for RenderContext {
 /// impl ViewExtractor<Text> for StringBackend {
 ///     type Output = String;
 ///
-///     fn extract(view: &Text, _ctx: &RenderContext) -> Self::Output {
-///         view.content.clone()
+///     fn extract(view: &Text, _ctx: &RenderContext) -> ExtractionResult<Self::Output> {
+///         Ok(view.content.clone())
 ///     }
 /// }
 ///
 /// let text = Text::new("Hello, world!");
 /// let ctx = RenderContext::new();
-/// let result = StringBackend::extract(&text, &ctx);
+/// let result = StringBackend::extract(&text, &ctx).unwrap();
 /// assert_eq!(result, "Hello, world!");
 /// ```
 pub trait ViewExtractor<V: View> {
@@ -96,8 +146,8 @@ pub trait ViewExtractor<V: View> {
     ///
     /// # Returns
     ///
-    /// The backend-specific representation of the view
-    fn extract(view: &V, ctx: &RenderContext) -> Self::Output;
+    /// The backend-specific representation of the view, or an error
+    fn extract(view: &V, ctx: &RenderContext) -> ExtractionResult<Self::Output>;
 }
 
 #[cfg(test)]
@@ -113,14 +163,14 @@ mod tests {
         impl ViewExtractor<Text> for StringBackend {
             type Output = String;
 
-            fn extract(view: &Text, _ctx: &RenderContext) -> Self::Output {
-                view.content.clone()
+            fn extract(view: &Text, _ctx: &RenderContext) -> ExtractionResult<Self::Output> {
+                Ok(view.content.clone())
             }
         }
 
         let text = Text::new("Hello, world!");
         let ctx = RenderContext::new();
-        let result = StringBackend::extract(&text, &ctx);
+        let result = StringBackend::extract(&text, &ctx).unwrap();
         assert_eq!(result, "Hello, world!");
     }
 }

@@ -36,6 +36,18 @@ use crate::{message::Message, view::View};
 /// The `update` method defines how the model changes in response to messages,
 /// and the `view` method creates the visual representation of the current state.
 ///
+/// ## Dynamic View Support
+///
+/// Models can optionally implement the `view()` method to provide dynamic view
+/// composition. This enables runtime-determined UI structures, conditional
+/// rendering, and other advanced patterns. Dynamic view composition can deliver
+/// benefits such as:
+///
+/// - **Conditional Rendering**: Show different views based on model state
+/// - **Runtime Lists**: Generate views from collections in the model
+/// - **Complex Layouts**: Build sophisticated UIs with nested containers
+/// - **Type Flexibility**: Mix different view types in the same container
+///
 /// # Examples
 ///
 /// ```

@@ -133,7 +133,7 @@ fn models_and_messages_are_thread_safe() {
             *model = model.clone().update(SharedMessage::Increment);
 
             // Verify extraction works in thread
-            let status_extracted = MockBackend::extract(&model.status, &ctx_clone);
+            let status_extracted = MockBackend::extract(&model.status, &ctx_clone).unwrap();
             assert!(status_extracted.content.starts_with("Count:"));
 
             thread::sleep(Duration::from_millis(1));
@@ -161,7 +161,7 @@ fn models_and_messages_are_thread_safe() {
             *model = model.clone().update(SharedMessage::SetPriority(priority));
 
             // Verify extraction works in thread
-            let status_extracted = MockBackend::extract(&model.status, &ctx_clone);
+            let status_extracted = MockBackend::extract(&model.status, &ctx_clone).unwrap();
             assert!(status_extracted.content.starts_with("Priority:"));
 
             thread::sleep(Duration::from_millis(1));
@@ -356,7 +356,7 @@ fn message_passing_between_threads() {
     assert!(final_model.events.contains(&"After clear".to_string()));
 
     // Verify extraction still works after threading
-    let status_extracted = MockBackend::extract(&final_model.status_text, &ctx);
+    let status_extracted = MockBackend::extract(&final_model.status_text, &ctx).unwrap();
     // The status should reflect the current number of events
     assert!(
         status_extracted
@@ -403,10 +403,11 @@ fn concurrent_view_extraction() {
 
             for extraction_id in 0..10 {
                 // Extract button
-                let button_extracted = MockBackend::extract(&button_clone.view(), &ctx_clone);
+                let button_extracted =
+                    MockBackend::extract(&button_clone.view(), &ctx_clone).unwrap();
 
                 // Extract text
-                let text_extracted = MockBackend::extract(text_clone.as_ref(), &ctx_clone);
+                let text_extracted = MockBackend::extract(text_clone.as_ref(), &ctx_clone).unwrap();
 
                 // Verify consistency
                 assert_eq!(button_extracted.text, "Complex Button");
@@ -671,13 +672,14 @@ fn concurrent_interaction_state_updates() {
     assert_eq!(final_model.interaction_count, 14); // 7 interactions per thread
 
     // Verify that both buttons are in their final states (not hovered, focused, or pressed)
-    let primary_extracted = MockBackend::extract(&final_model.primary_button.view(), &ctx);
+    let primary_extracted = MockBackend::extract(&final_model.primary_button.view(), &ctx).unwrap();
     assert!(primary_extracted.interaction_state.is_enabled());
     assert!(!primary_extracted.interaction_state.is_hovered());
     assert!(!primary_extracted.interaction_state.is_focused());
     assert!(!primary_extracted.interaction_state.is_pressed());
 
-    let secondary_extracted = MockBackend::extract(&final_model.secondary_button.view(), &ctx);
+    let secondary_extracted =
+        MockBackend::extract(&final_model.secondary_button.view(), &ctx).unwrap();
     assert!(secondary_extracted.interaction_state.is_enabled());
     assert!(!secondary_extracted.interaction_state.is_hovered());
     assert!(!secondary_extracted.interaction_state.is_focused());

@@ -16,7 +16,7 @@ use std::fmt::Debug;
 
 use crate::{
     elements::{Alignment, HStack, Spacer, Text, VStack},
-    extraction::{RenderContext, ViewExtractor},
+    extraction::{ExtractionResult, RenderContext, ViewExtractor},
     interaction::InteractionState,
     style::{Color, TextStyle},
     view::View,
@@ -40,7 +40,7 @@ use crate::{
 ///
 /// let text = Text::new("Hello, world!");
 /// let ctx = RenderContext::new();
-/// let extracted = MockBackend::extract(&text, &ctx);
+/// let extracted = MockBackend::extract(&text, &ctx).unwrap();
 /// assert_eq!(extracted.content, "Hello, world!");
 /// ```
 pub struct MockBackend;
@@ -63,14 +63,14 @@ pub struct MockText {
 impl ViewExtractor<Text> for MockBackend {
     type Output = MockText;
 
-    fn extract(view: &Text, _ctx: &RenderContext) -> Self::Output {
+    fn extract(view: &Text, _ctx: &RenderContext) -> ExtractionResult<Self::Output> {
         // Extract all the essential data from the Text view
         // This demonstrates how backends can access view properties
-        MockText {
+        Ok(MockText {
             content: view.content.clone(),
             font_size: view.style.font_size,
             color: view.style.color,
-        }
+        })
     }
 }
 
@@ -94,14 +94,14 @@ pub struct MockButton {
 impl ViewExtractor<ButtonView> for MockBackend {
     type Output = MockButton;
 
-    fn extract(view: &ButtonView, _ctx: &RenderContext) -> Self::Output {
-        // Extract button view display information for testing
-        MockButton {
+    fn extract(view: &ButtonView, _ctx: &RenderContext) -> ExtractionResult<Self::Output> {
+        // Extract button component display information for testing
+        Ok(MockButton {
             text: view.text.content.clone(),
             background_color: view.background_color,
             text_style: view.text.style,
             interaction_state: view.interaction_state,
-        }
+        })
     }
 }
 
@@ -117,10 +117,10 @@ pub struct MockSpacer {
 impl ViewExtractor<Spacer> for MockBackend {
     type Output = MockSpacer;
 
-    fn extract(view: &Spacer, _ctx: &RenderContext) -> Self::Output {
-        MockSpacer {
+    fn extract(view: &Spacer, _ctx: &RenderContext) -> ExtractionResult<Self::Output> {
+        Ok(MockSpacer {
             min_size: view.min_size,
-        }
+        })
     }
 }
 
@@ -132,8 +132,10 @@ where
 {
     type Output = Option<<Self as ViewExtractor<V>>::Output>;
 
-    fn extract(view: &Option<V>, context: &RenderContext) -> Self::Output {
-        view.as_ref().map(|inner| Self::extract(inner, context))
+    fn extract(view: &Option<V>, context: &RenderContext) -> ExtractionResult<Self::Output> {
+        view.as_ref()
+            .map(|inner| Self::extract(inner, context))
+            .transpose()
     }
 }
 
@@ -150,11 +152,11 @@ where
         <Self as ViewExtractor<V2>>::Output,
     );
 
-    fn extract(view: &(V1, V2), context: &RenderContext) -> Self::Output {
-        (
-            Self::extract(&view.0, context),
-            Self::extract(&view.1, context),
-        )
+    fn extract(view: &(V1, V2), context: &RenderContext) -> ExtractionResult<Self::Output> {
+        Ok((
+            Self::extract(&view.0, context)?,
+            Self::extract(&view.1, context)?,
+        ))
     }
 }
 
@@ -171,12 +173,12 @@ where
         <Self as ViewExtractor<V3>>::Output,
     );
 
-    fn extract(view: &(V1, V2, V3), context: &RenderContext) -> Self::Output {
-        (
-            Self::extract(&view.0, context),
-            Self::extract(&view.1, context),
-            Self::extract(&view.2, context),
-        )
+    fn extract(view: &(V1, V2, V3), context: &RenderContext) -> ExtractionResult<Self::Output> {
+        Ok((
+            Self::extract(&view.0, context)?,
+            Self::extract(&view.1, context)?,
+            Self::extract(&view.2, context)?,
+        ))
     }
 }
 
@@ -195,13 +197,13 @@ where
         <Self as ViewExtractor<V4>>::Output,
     );
 
-    fn extract(view: &(V1, V2, V3, V4), context: &RenderContext) -> Self::Output {
-        (
-            Self::extract(&view.0, context),
-            Self::extract(&view.1, context),
-            Self::extract(&view.2, context),
-            Self::extract(&view.3, context),
-        )
+    fn extract(view: &(V1, V2, V3, V4), context: &RenderContext) -> ExtractionResult<Self::Output> {
+        Ok((
+            Self::extract(&view.0, context)?,
+            Self::extract(&view.1, context)?,
+            Self::extract(&view.2, context)?,
+            Self::extract(&view.3, context)?,
+        ))
     }
 }
 
@@ -226,14 +228,17 @@ where
         <Self as ViewExtractor<V5>>::Output,
     );
 
-    fn extract(view: &(V1, V2, V3, V4, V5), context: &RenderContext) -> Self::Output {
-        (
-            Self::extract(&view.0, context),
-            Self::extract(&view.1, context),
-            Self::extract(&view.2, context),
-            Self::extract(&view.3, context),
-            Self::extract(&view.4, context),
-        )
+    fn extract(
+        view: &(V1, V2, V3, V4, V5),
+        context: &RenderContext,
+    ) -> ExtractionResult<Self::Output> {
+        Ok((
+            Self::extract(&view.0, context)?,
+            Self::extract(&view.1, context)?,
+            Self::extract(&view.2, context)?,
+            Self::extract(&view.3, context)?,
+            Self::extract(&view.4, context)?,
+        ))
     }
 }
 
@@ -261,15 +266,18 @@ where
         <Self as ViewExtractor<V6>>::Output,
     );
 
-    fn extract(view: &(V1, V2, V3, V4, V5, V6), context: &RenderContext) -> Self::Output {
-        (
-            Self::extract(&view.0, context),
-            Self::extract(&view.1, context),
-            Self::extract(&view.2, context),
-            Self::extract(&view.3, context),
-            Self::extract(&view.4, context),
-            Self::extract(&view.5, context),
-        )
+    fn extract(
+        view: &(V1, V2, V3, V4, V5, V6),
+        context: &RenderContext,
+    ) -> ExtractionResult<Self::Output> {
+        Ok((
+            Self::extract(&view.0, context)?,
+            Self::extract(&view.1, context)?,
+            Self::extract(&view.2, context)?,
+            Self::extract(&view.3, context)?,
+            Self::extract(&view.4, context)?,
+            Self::extract(&view.5, context)?,
+        ))
     }
 }
 
@@ -300,16 +308,19 @@ where
         <Self as ViewExtractor<V7>>::Output,
     );
 
-    fn extract(view: &(V1, V2, V3, V4, V5, V6, V7), context: &RenderContext) -> Self::Output {
-        (
-            Self::extract(&view.0, context),
-            Self::extract(&view.1, context),
-            Self::extract(&view.2, context),
-            Self::extract(&view.3, context),
-            Self::extract(&view.4, context),
-            Self::extract(&view.5, context),
-            Self::extract(&view.6, context),
-        )
+    fn extract(
+        view: &(V1, V2, V3, V4, V5, V6, V7),
+        context: &RenderContext,
+    ) -> ExtractionResult<Self::Output> {
+        Ok((
+            Self::extract(&view.0, context)?,
+            Self::extract(&view.1, context)?,
+            Self::extract(&view.2, context)?,
+            Self::extract(&view.3, context)?,
+            Self::extract(&view.4, context)?,
+            Self::extract(&view.5, context)?,
+            Self::extract(&view.6, context)?,
+        ))
     }
 }
 
@@ -343,17 +354,20 @@ where
         <Self as ViewExtractor<V8>>::Output,
     );
 
-    fn extract(view: &(V1, V2, V3, V4, V5, V6, V7, V8), context: &RenderContext) -> Self::Output {
-        (
-            Self::extract(&view.0, context),
-            Self::extract(&view.1, context),
-            Self::extract(&view.2, context),
-            Self::extract(&view.3, context),
-            Self::extract(&view.4, context),
-            Self::extract(&view.5, context),
-            Self::extract(&view.6, context),
-            Self::extract(&view.7, context),
-        )
+    fn extract(
+        view: &(V1, V2, V3, V4, V5, V6, V7, V8),
+        context: &RenderContext,
+    ) -> ExtractionResult<Self::Output> {
+        Ok((
+            Self::extract(&view.0, context)?,
+            Self::extract(&view.1, context)?,
+            Self::extract(&view.2, context)?,
+            Self::extract(&view.3, context)?,
+            Self::extract(&view.4, context)?,
+            Self::extract(&view.5, context)?,
+            Self::extract(&view.6, context)?,
+            Self::extract(&view.7, context)?,
+        ))
     }
 }
 
@@ -394,18 +408,18 @@ where
     fn extract(
         view: &(V1, V2, V3, V4, V5, V6, V7, V8, V9),
         context: &RenderContext,
-    ) -> Self::Output {
-        (
-            Self::extract(&view.0, context),
-            Self::extract(&view.1, context),
-            Self::extract(&view.2, context),
-            Self::extract(&view.3, context),
-            Self::extract(&view.4, context),
-            Self::extract(&view.5, context),
-            Self::extract(&view.6, context),
-            Self::extract(&view.7, context),
-            Self::extract(&view.8, context),
-        )
+    ) -> ExtractionResult<Self::Output> {
+        Ok((
+            Self::extract(&view.0, context)?,
+            Self::extract(&view.1, context)?,
+            Self::extract(&view.2, context)?,
+            Self::extract(&view.3, context)?,
+            Self::extract(&view.4, context)?,
+            Self::extract(&view.5, context)?,
+            Self::extract(&view.6, context)?,
+            Self::extract(&view.7, context)?,
+            Self::extract(&view.8, context)?,
+        ))
     }
 }
 
@@ -449,19 +463,19 @@ where
     fn extract(
         view: &(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10),
         context: &RenderContext,
-    ) -> Self::Output {
-        (
-            Self::extract(&view.0, context),
-            Self::extract(&view.1, context),
-            Self::extract(&view.2, context),
-            Self::extract(&view.3, context),
-            Self::extract(&view.4, context),
-            Self::extract(&view.5, context),
-            Self::extract(&view.6, context),
-            Self::extract(&view.7, context),
-            Self::extract(&view.8, context),
-            Self::extract(&view.9, context),
-        )
+    ) -> ExtractionResult<Self::Output> {
+        Ok((
+            Self::extract(&view.0, context)?,
+            Self::extract(&view.1, context)?,
+            Self::extract(&view.2, context)?,
+            Self::extract(&view.3, context)?,
+            Self::extract(&view.4, context)?,
+            Self::extract(&view.5, context)?,
+            Self::extract(&view.6, context)?,
+            Self::extract(&view.7, context)?,
+            Self::extract(&view.8, context)?,
+            Self::extract(&view.9, context)?,
+        ))
     }
 }
 
@@ -508,20 +522,20 @@ where
     fn extract(
         view: &(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11),
         context: &RenderContext,
-    ) -> Self::Output {
-        (
-            Self::extract(&view.0, context),
-            Self::extract(&view.1, context),
-            Self::extract(&view.2, context),
-            Self::extract(&view.3, context),
-            Self::extract(&view.4, context),
-            Self::extract(&view.5, context),
-            Self::extract(&view.6, context),
-            Self::extract(&view.7, context),
-            Self::extract(&view.8, context),
-            Self::extract(&view.9, context),
-            Self::extract(&view.10, context),
-        )
+    ) -> ExtractionResult<Self::Output> {
+        Ok((
+            Self::extract(&view.0, context)?,
+            Self::extract(&view.1, context)?,
+            Self::extract(&view.2, context)?,
+            Self::extract(&view.3, context)?,
+            Self::extract(&view.4, context)?,
+            Self::extract(&view.5, context)?,
+            Self::extract(&view.6, context)?,
+            Self::extract(&view.7, context)?,
+            Self::extract(&view.8, context)?,
+            Self::extract(&view.9, context)?,
+            Self::extract(&view.10, context)?,
+        ))
     }
 }
 
@@ -571,21 +585,21 @@ where
     fn extract(
         view: &(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12),
         context: &RenderContext,
-    ) -> Self::Output {
-        (
-            Self::extract(&view.0, context),
-            Self::extract(&view.1, context),
-            Self::extract(&view.2, context),
-            Self::extract(&view.3, context),
-            Self::extract(&view.4, context),
-            Self::extract(&view.5, context),
-            Self::extract(&view.6, context),
-            Self::extract(&view.7, context),
-            Self::extract(&view.8, context),
-            Self::extract(&view.9, context),
-            Self::extract(&view.10, context),
-            Self::extract(&view.11, context),
-        )
+    ) -> ExtractionResult<Self::Output> {
+        Ok((
+            Self::extract(&view.0, context)?,
+            Self::extract(&view.1, context)?,
+            Self::extract(&view.2, context)?,
+            Self::extract(&view.3, context)?,
+            Self::extract(&view.4, context)?,
+            Self::extract(&view.5, context)?,
+            Self::extract(&view.6, context)?,
+            Self::extract(&view.7, context)?,
+            Self::extract(&view.8, context)?,
+            Self::extract(&view.9, context)?,
+            Self::extract(&view.10, context)?,
+            Self::extract(&view.11, context)?,
+        ))
     }
 }
 
@@ -607,12 +621,12 @@ where
 {
     type Output = MockVStack<<Self as ViewExtractor<T>>::Output>;
 
-    fn extract(view: &VStack<T>, context: &RenderContext) -> Self::Output {
-        MockVStack {
-            content: Self::extract(&view.content, context),
+    fn extract(view: &VStack<T>, context: &RenderContext) -> ExtractionResult<Self::Output> {
+        Ok(MockVStack {
+            content: Self::extract(&view.content, context)?,
             alignment: view.alignment,
             spacing: view.spacing,
-        }
+        })
     }
 }
 
@@ -634,12 +648,12 @@ where
 {
     type Output = MockHStack<<Self as ViewExtractor<T>>::Output>;
 
-    fn extract(view: &HStack<T>, context: &RenderContext) -> Self::Output {
-        MockHStack {
-            content: Self::extract(&view.content, context),
+    fn extract(view: &HStack<T>, context: &RenderContext) -> ExtractionResult<Self::Output> {
+        Ok(MockHStack {
+            content: Self::extract(&view.content, context)?,
             alignment: view.alignment,
             spacing: view.spacing,
-        }
+        })
     }
 }
 
@@ -660,7 +674,7 @@ mod tests {
         let text = Text::new("Hello, world!");
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&text, &ctx);
+        let extracted = MockBackend::extract(&text, &ctx).unwrap();
 
         assert_eq!(extracted.content, "Hello, world!");
         assert_eq!(extracted.font_size, 16.0);
@@ -673,7 +687,7 @@ mod tests {
         let text = Text::new("Styled text").font_size(24.0).color(Color::RED);
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&text, &ctx);
+        let extracted = MockBackend::extract(&text, &ctx).unwrap();
 
         assert_eq!(extracted.content, "Styled text");
         assert_eq!(extracted.font_size, 24.0);
@@ -686,7 +700,7 @@ mod tests {
         let button = Button::new("Click me");
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&button.view(), &ctx);
+        let extracted = MockBackend::extract(&button.view(), &ctx).unwrap();
 
         assert_eq!(extracted.text, "Click me");
         assert_eq!(extracted.background_color, Color::rgb(0.9, 0.9, 0.9));
@@ -703,7 +717,7 @@ mod tests {
         let button = Button::new("Disabled").disable();
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&button.view(), &ctx);
+        let extracted = MockBackend::extract(&button.view(), &ctx).unwrap();
 
         assert_eq!(extracted.text, "Disabled");
         assert!(!extracted.interaction_state.is_enabled());
@@ -719,7 +733,7 @@ mod tests {
 
         // Test clicked button (no state change)
         let clicked_button = Button::new("Clicked").update(ButtonMessage::Clicked);
-        let clicked_extracted = MockBackend::extract(&clicked_button.view(), &ctx);
+        let clicked_extracted = MockBackend::extract(&clicked_button.view(), &ctx).unwrap();
         assert_eq!(clicked_extracted.text, "Clicked");
         assert!(clicked_extracted.interaction_state.is_enabled());
         assert!(!clicked_extracted.interaction_state.is_pressed());
@@ -730,7 +744,7 @@ mod tests {
         let focused_button = Button::new("Focused").update(ButtonMessage::Interaction(
             InteractionMessage::FocusChanged(true),
         ));
-        let focused_extracted = MockBackend::extract(&focused_button.view(), &ctx);
+        let focused_extracted = MockBackend::extract(&focused_button.view(), &ctx).unwrap();
         assert_eq!(focused_extracted.text, "Focused");
         assert!(focused_extracted.interaction_state.is_enabled());
         assert!(!focused_extracted.interaction_state.is_pressed());
@@ -741,7 +755,7 @@ mod tests {
         let pressed_button = Button::new("Pressed").update(ButtonMessage::Interaction(
             InteractionMessage::PressStateChanged(true),
         ));
-        let pressed_extracted = MockBackend::extract(&pressed_button.view(), &ctx);
+        let pressed_extracted = MockBackend::extract(&pressed_button.view(), &ctx).unwrap();
         assert_eq!(pressed_extracted.text, "Pressed");
         assert!(pressed_extracted.interaction_state.is_enabled());
         assert!(pressed_extracted.interaction_state.is_pressed());
@@ -752,7 +766,7 @@ mod tests {
         let hovered_button = Button::new("Hovered").update(ButtonMessage::Interaction(
             InteractionMessage::HoverChanged(true),
         ));
-        let hovered_extracted = MockBackend::extract(&hovered_button.view(), &ctx);
+        let hovered_extracted = MockBackend::extract(&hovered_button.view(), &ctx).unwrap();
         assert_eq!(hovered_extracted.text, "Hovered");
         assert!(hovered_extracted.interaction_state.is_enabled());
         assert!(!hovered_extracted.interaction_state.is_pressed());
@@ -769,7 +783,7 @@ mod tests {
             .enable();
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&button.view(), &ctx);
+        let extracted = MockBackend::extract(&button.view(), &ctx).unwrap();
 
         assert_eq!(extracted.text, "Styled");
         assert_eq!(extracted.background_color, Color::BLUE);
@@ -785,8 +799,8 @@ mod tests {
         let ctx = RenderContext::new();
 
         // Extract views
-        let _extracted_text = MockBackend::extract(&original_text, &ctx);
-        let _extracted_button = MockBackend::extract(&original_button.view(), &ctx);
+        let _extracted_text = MockBackend::extract(&original_text, &ctx).unwrap();
+        let _extracted_button = MockBackend::extract(&original_button.view(), &ctx).unwrap();
 
         // Original views should be unchanged
         assert_eq!(original_text.content, "Original");
@@ -802,12 +816,12 @@ mod tests {
 
         // Test default spacer
         let spacer = Spacer::new();
-        let extracted = MockBackend::extract(&spacer, &ctx);
+        let extracted = MockBackend::extract(&spacer, &ctx).unwrap();
         assert_eq!(extracted.min_size, 0.0);
 
         // Test spacer with minimum size
         let sized_spacer = Spacer::min_size(20.0);
-        let sized_extracted = MockBackend::extract(&sized_spacer, &ctx);
+        let sized_extracted = MockBackend::extract(&sized_spacer, &ctx).unwrap();
         assert_eq!(sized_extracted.min_size, 20.0);
     }
 
@@ -818,13 +832,13 @@ mod tests {
 
         // Test Some(view)
         let some_text = Some(Text::new("Present"));
-        let some_extracted = MockBackend::extract(&some_text, &ctx);
+        let some_extracted = MockBackend::extract(&some_text, &ctx).unwrap();
         assert!(some_extracted.is_some());
         assert_eq!(some_extracted.unwrap().content, "Present");
 
         // Test None
         let none_text: Option<Text> = None;
-        let none_extracted = MockBackend::extract(&none_text, &ctx);
+        let none_extracted = MockBackend::extract(&none_text, &ctx).unwrap();
         assert!(none_extracted.is_none());
     }
 
@@ -834,13 +848,13 @@ mod tests {
 
         // Test 2-tuple extraction
         let tuple2 = (Text::new("First"), Text::new("Second"));
-        let extracted2 = MockBackend::extract(&tuple2, &ctx);
+        let extracted2 = MockBackend::extract(&tuple2, &ctx).unwrap();
         assert_eq!(extracted2.0.content, "First");
         assert_eq!(extracted2.1.content, "Second");
 
         // Test 3-tuple extraction
         let tuple3 = (Text::new("One"), Text::new("Two"), Text::new("Three"));
-        let extracted3 = MockBackend::extract(&tuple3, &ctx);
+        let extracted3 = MockBackend::extract(&tuple3, &ctx).unwrap();
         assert_eq!(extracted3.0.content, "One");
         assert_eq!(extracted3.1.content, "Two");
         assert_eq!(extracted3.2.content, "Three");
@@ -852,7 +866,7 @@ mod tests {
             Text::new("C"),
             Text::new("D"),
         );
-        let extracted4 = MockBackend::extract(&tuple4, &ctx);
+        let extracted4 = MockBackend::extract(&tuple4, &ctx).unwrap();
         assert_eq!(extracted4.0.content, "A");
         assert_eq!(extracted4.1.content, "B");
         assert_eq!(extracted4.2.content, "C");
@@ -867,7 +881,7 @@ mod tests {
         let tuple = (text, button.view());
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&tuple, &ctx);
+        let extracted = MockBackend::extract(&tuple, &ctx).unwrap();
 
         assert_eq!(extracted.0.content, "Hello");
         assert_eq!(extracted.0.color, Color::RED);
@@ -883,7 +897,7 @@ mod tests {
         let vstack = VStack::new((text1, text2));
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&vstack, &ctx);
+        let extracted = MockBackend::extract(&vstack, &ctx).unwrap();
 
         assert_eq!(extracted.spacing, 0.0);
         assert_eq!(extracted.content.0.content, "Top");
@@ -898,7 +912,7 @@ mod tests {
         let vstack = VStack::new((text1, text2)).spacing(16.0);
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&vstack, &ctx);
+        let extracted = MockBackend::extract(&vstack, &ctx).unwrap();
 
         assert_eq!(extracted.spacing, 16.0);
         assert_eq!(extracted.alignment, Alignment::Leading);
@@ -914,7 +928,7 @@ mod tests {
         let vstack = VStack::new((text1, text2)).alignment(Alignment::Center);
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&vstack, &ctx);
+        let extracted = MockBackend::extract(&vstack, &ctx).unwrap();
 
         assert_eq!(extracted.spacing, 0.0);
         assert_eq!(extracted.alignment, Alignment::Center);
@@ -930,7 +944,7 @@ mod tests {
         let hstack = HStack::new((text1, text2));
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&hstack, &ctx);
+        let extracted = MockBackend::extract(&hstack, &ctx).unwrap();
 
         assert_eq!(extracted.spacing, 0.0);
         assert_eq!(extracted.content.0.content, "Left");
@@ -945,7 +959,7 @@ mod tests {
         let hstack = HStack::new((text1, text2)).spacing(8.0);
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&hstack, &ctx);
+        let extracted = MockBackend::extract(&hstack, &ctx).unwrap();
 
         assert_eq!(extracted.spacing, 8.0);
         assert_eq!(extracted.alignment, Alignment::Leading);
@@ -961,7 +975,7 @@ mod tests {
         let hstack = HStack::new((text1, text2)).alignment(Alignment::Trailing);
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&hstack, &ctx);
+        let extracted = MockBackend::extract(&hstack, &ctx).unwrap();
 
         assert_eq!(extracted.spacing, 0.0);
         assert_eq!(extracted.alignment, Alignment::Trailing);
@@ -980,7 +994,7 @@ mod tests {
         let outer_vstack = VStack::new((inner_hstack, outer_text)).spacing(12.0);
 
         let ctx = RenderContext::new();
-        let extracted = MockBackend::extract(&outer_vstack, &ctx);
+        let extracted = MockBackend::extract(&outer_vstack, &ctx).unwrap();
 
         assert_eq!(extracted.spacing, 12.0);
         assert_eq!(extracted.content.0.spacing, 4.0);
@@ -997,7 +1011,7 @@ mod tests {
         let vstack = VStack::new((text, button.view())).spacing(10.0);
 
         let ctx = RenderContext::new();
-        let extracted = MockBackend::extract(&vstack, &ctx);
+        let extracted = MockBackend::extract(&vstack, &ctx).unwrap();
 
         assert_eq!(extracted.spacing, 10.0);
         assert_eq!(extracted.content.0.content, "Label");
@@ -1018,7 +1032,7 @@ mod tests {
         );
         let ctx = RenderContext::new();
 
-        let extracted = MockBackend::extract(&texts, &ctx);
+        let extracted = MockBackend::extract(&texts, &ctx).unwrap();
 
         assert_eq!(extracted.0.content, "1");
         assert_eq!(extracted.1.content, "2");
@@ -1046,7 +1060,7 @@ mod tests {
         let main_layout = VStack::new((header, content, footer)).spacing(16.0);
 
         let ctx = RenderContext::new();
-        let extracted = MockBackend::extract(&main_layout, &ctx);
+        let extracted = MockBackend::extract(&main_layout, &ctx).unwrap();
 
         // Verify structure
         assert_eq!(extracted.spacing, 16.0);

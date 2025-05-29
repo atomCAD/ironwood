@@ -22,12 +22,12 @@ fn main() {
 
     // Some view
     let some_text = Some(Text::new("This text is present"));
-    let some_extracted = MockBackend::extract(&some_text, &ctx);
+    let some_extracted = MockBackend::extract(&some_text, &ctx).unwrap();
     println!("Some(Text): {:?}", some_extracted);
 
     // None view
     let none_text: Option<Text> = None;
-    let none_extracted = MockBackend::extract(&none_text, &ctx);
+    let none_extracted = MockBackend::extract(&none_text, &ctx).unwrap();
     println!("None: {:?}", none_extracted);
 
     println!();
@@ -37,12 +37,12 @@ fn main() {
 
     // Default spacer
     let default_spacer = Spacer::new();
-    let default_extracted = MockBackend::extract(&default_spacer, &ctx);
+    let default_extracted = MockBackend::extract(&default_spacer, &ctx).unwrap();
     println!("Default spacer: min_size = {}", default_extracted.min_size);
 
     // Spacer with minimum size
     let sized_spacer = Spacer::min_size(50.0);
-    let sized_extracted = MockBackend::extract(&sized_spacer, &ctx);
+    let sized_extracted = MockBackend::extract(&sized_spacer, &ctx).unwrap();
     println!("Sized spacer: min_size = {}", sized_extracted.min_size);
 
     println!();
@@ -53,7 +53,7 @@ fn main() {
     // VStack with different alignments
     let leading_vstack = VStack::new((Text::new("Leading aligned"), Text::new("content")))
         .alignment(Alignment::Leading);
-    let leading_extracted = MockBackend::extract(&leading_vstack, &ctx);
+    let leading_extracted = MockBackend::extract(&leading_vstack, &ctx).unwrap();
     println!(
         "VStack leading alignment: {:?}",
         leading_extracted.alignment
@@ -61,12 +61,12 @@ fn main() {
 
     let center_vstack = VStack::new((Text::new("Center aligned"), Text::new("content")))
         .alignment(Alignment::Center);
-    let center_extracted = MockBackend::extract(&center_vstack, &ctx);
+    let center_extracted = MockBackend::extract(&center_vstack, &ctx).unwrap();
     println!("VStack center alignment: {:?}", center_extracted.alignment);
 
     let trailing_vstack = VStack::new((Text::new("Trailing aligned"), Text::new("content")))
         .alignment(Alignment::Trailing);
-    let trailing_extracted = MockBackend::extract(&trailing_vstack, &ctx);
+    let trailing_extracted = MockBackend::extract(&trailing_vstack, &ctx).unwrap();
     println!(
         "VStack trailing alignment: {:?}",
         trailing_extracted.alignment
@@ -75,7 +75,7 @@ fn main() {
     // HStack with alignment
     let center_hstack =
         HStack::new((Text::new("Left"), Text::new("Right"))).alignment(Alignment::Center);
-    let hstack_extracted = MockBackend::extract(&center_hstack, &ctx);
+    let hstack_extracted = MockBackend::extract(&center_hstack, &ctx).unwrap();
     println!("HStack center alignment: {:?}", hstack_extracted.alignment);
 
     println!();
@@ -101,7 +101,7 @@ fn main() {
     .spacing(8.0)
     .alignment(Alignment::Center);
 
-    let toolbar_extracted = MockBackend::extract(&toolbar, &ctx);
+    let toolbar_extracted = MockBackend::extract(&toolbar, &ctx).unwrap();
     println!("Toolbar layout extracted:");
     println!("  Spacing: {}", toolbar_extracted.spacing);
     println!("  Alignment: {:?}", toolbar_extracted.alignment);

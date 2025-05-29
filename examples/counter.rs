@@ -523,7 +523,7 @@ fn main() {
     // Extract the complete UI layout to show how containers work
     let ctx = RenderContext::new();
     let ui_layout = model.view();
-    let layout_extracted = MockBackend::extract(&ui_layout, &ctx);
+    let layout_extracted = MockBackend::extract(&ui_layout, &ctx).unwrap();
 
     println!("Complete UI Layout:");
     println!(
@@ -547,9 +547,9 @@ fn main() {
     println!();
 
     // Also extract individual components to show their state
-    let increment_extracted = MockBackend::extract(&model.increment_button.view(), &ctx);
-    let decrement_extracted = MockBackend::extract(&model.decrement_button.view(), &ctx);
-    let display_extracted = MockBackend::extract(&model.count_display(), &ctx);
+    let increment_extracted = MockBackend::extract(&model.increment_button.view(), &ctx).unwrap();
+    let decrement_extracted = MockBackend::extract(&model.decrement_button.view(), &ctx).unwrap();
+    let display_extracted = MockBackend::extract(&model.count_display(), &ctx).unwrap();
 
     println!("Individual Component States:");
     println!(
@@ -579,7 +579,7 @@ fn main() {
 
     // Show how the UI layout reflects the new state
     let updated_layout = model.view();
-    let updated_extracted = MockBackend::extract(&updated_layout, &ctx);
+    let updated_extracted = MockBackend::extract(&updated_layout, &ctx).unwrap();
     println!(
         "  └─ Updated count display: '{}'",
         updated_extracted.content.1.content
@@ -594,7 +594,7 @@ fn main() {
 
     // Show layout update again
     let updated_layout = model.view();
-    let updated_extracted = MockBackend::extract(&updated_layout, &ctx);
+    let updated_extracted = MockBackend::extract(&updated_layout, &ctx).unwrap();
     println!(
         "  └─ Updated count display: '{}'",
         updated_extracted.content.1.content
@@ -623,7 +623,7 @@ fn main() {
     println!();
 
     // Show final UI state
-    let display_extracted = MockBackend::extract(&model.count_display(), &ctx);
+    let display_extracted = MockBackend::extract(&model.count_display(), &ctx).unwrap();
     println!("Final count display: '{}'", display_extracted.content);
     println!();
 
@@ -808,9 +808,11 @@ mod tests {
         let ctx = RenderContext::new();
 
         // Test initial UI state
-        let increment_extracted = MockBackend::extract(&model.increment_button.view(), &ctx);
-        let decrement_extracted = MockBackend::extract(&model.decrement_button.view(), &ctx);
-        let display_extracted = MockBackend::extract(&model.count_display(), &ctx);
+        let increment_extracted =
+            MockBackend::extract(&model.increment_button.view(), &ctx).unwrap();
+        let decrement_extracted =
+            MockBackend::extract(&model.decrement_button.view(), &ctx).unwrap();
+        let display_extracted = MockBackend::extract(&model.count_display(), &ctx).unwrap();
 
         assert_eq!(increment_extracted.text, "+");
         assert_eq!(decrement_extracted.text, "-");
@@ -818,7 +820,7 @@ mod tests {
 
         // Test UI updates after count change
         let updated = model.update(CounterMessage::IncrementButton(ButtonMessage::Clicked));
-        let display_extracted = MockBackend::extract(&updated.count_display(), &ctx);
+        let display_extracted = MockBackend::extract(&updated.count_display(), &ctx).unwrap();
         assert_eq!(display_extracted.content, "6");
     }
 
@@ -829,7 +831,7 @@ mod tests {
         let ctx = RenderContext::new();
 
         let ui_layout = model.view();
-        let layout_extracted = MockBackend::extract(&ui_layout, &ctx);
+        let layout_extracted = MockBackend::extract(&ui_layout, &ctx).unwrap();
 
         // Test VStack properties
         assert_eq!(layout_extracted.spacing, 16.0);

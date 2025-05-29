@@ -108,7 +108,7 @@ fn demonstrate_text_views(ctx: &RenderContext) {
     ];
 
     for (level, text) in hierarchy {
-        let extracted = MockBackend::extract(text, ctx);
+        let extracted = MockBackend::extract(text, ctx).unwrap();
         println!(
             "  {}: \"{}\" ({}px, RGB({:.1}, {:.1}, {:.1}))",
             level,
@@ -129,7 +129,7 @@ fn demonstrate_text_views(ctx: &RenderContext) {
     ];
 
     for (type_name, text) in semantic {
-        let extracted = MockBackend::extract(text, ctx);
+        let extracted = MockBackend::extract(text, ctx).unwrap();
         println!(
             "  {}: \"{}\" (RGB({:.1}, {:.1}, {:.1}))",
             type_name, extracted.content, extracted.color.r, extracted.color.g, extracted.color.b
@@ -140,7 +140,7 @@ fn demonstrate_text_views(ctx: &RenderContext) {
     let advanced = [("Overlay", &overlay_text), ("Accent", &accent_text)];
 
     for (technique, text) in advanced {
-        let extracted = MockBackend::extract(text, ctx);
+        let extracted = MockBackend::extract(text, ctx).unwrap();
         println!(
             "  {}: \"{}\" (RGBA({:.1}, {:.1}, {:.1}, {:.1}))",
             technique,
@@ -212,7 +212,7 @@ fn demonstrate_button_views(ctx: &RenderContext) {
     ];
 
     for (variant, button) in variants {
-        let extracted = MockBackend::extract(&button.view(), ctx);
+        let extracted = MockBackend::extract(&button.view(), ctx).unwrap();
         println!(
             "  {}: \"{}\" | BG: RGBA({:.1}, {:.1}, {:.1}, {:.1}) | Text: RGB({:.1}, {:.1}, {:.1})",
             variant,
@@ -235,7 +235,7 @@ fn demonstrate_button_views(ctx: &RenderContext) {
     ];
 
     for (meaning, button) in semantic {
-        let extracted = MockBackend::extract(&button.view(), ctx);
+        let extracted = MockBackend::extract(&button.view(), ctx).unwrap();
         println!(
             "  {}: \"{}\" | BG: RGB({:.1}, {:.1}, {:.1})",
             meaning,
@@ -254,7 +254,7 @@ fn demonstrate_button_views(ctx: &RenderContext) {
     ];
 
     for (size, button) in sizes {
-        let extracted = MockBackend::extract(&button.view(), ctx);
+        let extracted = MockBackend::extract(&button.view(), ctx).unwrap();
         println!(
             "  {}: \"{}\" | Font: {}px",
             size, extracted.text, extracted.text_style.font_size
@@ -265,7 +265,7 @@ fn demonstrate_button_views(ctx: &RenderContext) {
     let effects = [("Disabled", &disabled_button), ("Glass", &glass_button)];
 
     for (effect, button) in effects {
-        let extracted = MockBackend::extract(&button.view(), ctx);
+        let extracted = MockBackend::extract(&button.view(), ctx).unwrap();
         let state = if extracted.interaction_state.is_enabled() {
             "Enabled"
         } else {
@@ -320,8 +320,8 @@ fn demonstrate_view_extraction(ctx: &RenderContext) {
     println!("  After MockBackend Extraction:");
 
     // Extract the views using the mock backend
-    let text_extracted = MockBackend::extract(&complex_text, ctx);
-    let button_extracted = MockBackend::extract(&complex_button.view(), ctx);
+    let text_extracted = MockBackend::extract(&complex_text, ctx).unwrap();
+    let button_extracted = MockBackend::extract(&complex_button.view(), ctx).unwrap();
 
     println!("    Text -> MockText:");
     println!("      Content: {:?}", text_extracted.content);
@@ -401,7 +401,7 @@ fn demonstrate_layout_styling(ctx: &RenderContext) {
     .alignment(Alignment::Leading);
 
     println!("Dashboard Layout Structure:");
-    let dashboard_extracted = MockBackend::extract(&complete_dashboard, ctx);
+    let dashboard_extracted = MockBackend::extract(&complete_dashboard, ctx).unwrap();
 
     println!(
         "  Main VStack: {} spacing, {:?} alignment",
@@ -409,7 +409,7 @@ fn demonstrate_layout_styling(ctx: &RenderContext) {
     );
 
     // Extract header section
-    let header_extracted = MockBackend::extract(&complete_dashboard.content.0, ctx);
+    let header_extracted = MockBackend::extract(&complete_dashboard.content.0, ctx).unwrap();
     println!(
         "  Header Section: {} spacing, {:?} alignment",
         header_extracted.spacing, header_extracted.alignment
@@ -418,11 +418,11 @@ fn demonstrate_layout_styling(ctx: &RenderContext) {
     println!("    Subtitle: '{}'", header_extracted.content.1.content);
 
     // Extract spacer
-    let spacer_extracted = MockBackend::extract(&complete_dashboard.content.1, ctx);
+    let spacer_extracted = MockBackend::extract(&complete_dashboard.content.1, ctx).unwrap();
     println!("  Spacer: {} min_size", spacer_extracted.min_size);
 
     // Extract status section
-    let status_extracted = MockBackend::extract(&complete_dashboard.content.2, ctx);
+    let status_extracted = MockBackend::extract(&complete_dashboard.content.2, ctx).unwrap();
     println!(
         "  Status Section: {} spacing, {:?} alignment",
         status_extracted.spacing, status_extracted.alignment
@@ -434,7 +434,7 @@ fn demonstrate_layout_styling(ctx: &RenderContext) {
     );
 
     // Extract action section
-    let action_extracted = MockBackend::extract(&complete_dashboard.content.4, ctx);
+    let action_extracted = MockBackend::extract(&complete_dashboard.content.4, ctx).unwrap();
     println!(
         "  Action Section: {} spacing, {:?} alignment",
         action_extracted.spacing, action_extracted.alignment
@@ -467,7 +467,7 @@ mod tests {
 
         // Test text views
         let title = Text::new("Test Title").font_size(24.0).color(Color::BLUE);
-        let extracted_text = MockBackend::extract(&title, &ctx);
+        let extracted_text = MockBackend::extract(&title, &ctx).unwrap();
         assert_eq!(extracted_text.content, "Test Title");
         assert_eq!(extracted_text.font_size, 24.0);
         assert_eq!(extracted_text.color, Color::BLUE);
@@ -476,7 +476,7 @@ mod tests {
         let button = Button::new("Test Button")
             .background_color(Color::RED)
             .enable();
-        let extracted_button = MockBackend::extract(&button.view(), &ctx);
+        let extracted_button = MockBackend::extract(&button.view(), &ctx).unwrap();
         assert_eq!(extracted_button.text, "Test Button");
         assert!(extracted_button.interaction_state.is_enabled());
         assert_eq!(extracted_button.background_color, Color::RED);
@@ -490,8 +490,8 @@ mod tests {
         let enabled_button = Button::new("Enabled").enable();
         let disabled_button = Button::new("Disabled").disable();
 
-        let enabled_extracted = MockBackend::extract(&enabled_button.view(), &ctx);
-        let disabled_extracted = MockBackend::extract(&disabled_button.view(), &ctx);
+        let enabled_extracted = MockBackend::extract(&enabled_button.view(), &ctx).unwrap();
+        let disabled_extracted = MockBackend::extract(&disabled_button.view(), &ctx).unwrap();
 
         assert!(enabled_extracted.interaction_state.is_enabled());
         assert!(!disabled_extracted.interaction_state.is_enabled());
@@ -506,8 +506,8 @@ mod tests {
         let text = Text::new("Custom").color(custom_color);
         let button = Button::new("Custom").background_color(custom_color);
 
-        let text_extracted = MockBackend::extract(&text, &ctx);
-        let button_extracted = MockBackend::extract(&button.view(), &ctx);
+        let text_extracted = MockBackend::extract(&text, &ctx).unwrap();
+        let button_extracted = MockBackend::extract(&button.view(), &ctx).unwrap();
 
         assert_eq!(text_extracted.color, custom_color);
         assert_eq!(button_extracted.background_color, custom_color);

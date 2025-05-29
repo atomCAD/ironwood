@@ -47,7 +47,7 @@ fn tuple_composition_integration() {
 
     // Test extraction of the complete nested structure
     let ctx = RenderContext::new();
-    let extracted = MockBackend::extract(&complete_ui, &ctx);
+    let extracted = MockBackend::extract(&complete_ui, &ctx).unwrap();
 
     // Verify the nested structure is preserved
     let (
@@ -126,7 +126,7 @@ fn layout_containers_integration() {
 
     // Test extraction of the complete form
     let ctx = RenderContext::new();
-    let extracted = MockBackend::extract(&complete_form, &ctx);
+    let extracted = MockBackend::extract(&complete_form, &ctx).unwrap();
 
     // Verify the VStack structure
     assert_eq!(extracted.spacing, 20.0);
@@ -210,7 +210,7 @@ fn mixed_composition_patterns() {
 
     // Test extraction of the complete mixed structure
     let ctx = RenderContext::new();
-    let extracted = MockBackend::extract(&dashboard, &ctx);
+    let extracted = MockBackend::extract(&dashboard, &ctx).unwrap();
 
     let (header_extracted, metrics_extracted, actions_extracted) = extracted;
 
@@ -357,10 +357,10 @@ fn composition_with_model_integration() {
     let ctx = RenderContext::new();
 
     // Test extracting individual components from the model fields
-    let header_text_extracted = MockBackend::extract(&model.header_text, &ctx);
-    let header_button_extracted = MockBackend::extract(&model.header_button.view(), &ctx);
-    let main_text_extracted = MockBackend::extract(&model.text, &ctx);
-    let footer_extracted = MockBackend::extract(&model.footer, &ctx);
+    let header_text_extracted = MockBackend::extract(&model.header_text, &ctx).unwrap();
+    let header_button_extracted = MockBackend::extract(&model.header_button.view(), &ctx).unwrap();
+    let main_text_extracted = MockBackend::extract(&model.text, &ctx).unwrap();
+    let footer_extracted = MockBackend::extract(&model.footer, &ctx).unwrap();
 
     // Verify individual components
     assert_eq!(header_text_extracted.content, "My App");
@@ -369,7 +369,7 @@ fn composition_with_model_integration() {
     assert_eq!(footer_extracted.content, "All systems operational");
 
     // Extract the full composed view to test structure
-    let full_view_extracted = MockBackend::extract(&model.view(), &ctx);
+    let full_view_extracted = MockBackend::extract(&model.view(), &ctx).unwrap();
     assert_eq!(full_view_extracted.spacing, 20.0);
 
     let (header_tuple, main_vstack, footer_text) = full_view_extracted.content;
@@ -426,7 +426,7 @@ fn deep_composition_nesting() {
 
     // Test extraction of the deeply nested structure
     let ctx = RenderContext::new();
-    let extracted = MockBackend::extract(&level1, &ctx);
+    let extracted = MockBackend::extract(&level1, &ctx).unwrap();
 
     // Navigate through the nested structure to verify it's preserved
     let (level1_text, level2_vstack) = extracted;

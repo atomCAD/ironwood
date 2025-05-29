@@ -32,12 +32,12 @@ fn complete_view_extraction_workflow() {
         .color(Color::RED);
 
     // Extract text views and verify all properties are preserved
-    let title_extracted = MockBackend::extract(&title_text, &ctx);
+    let title_extracted = MockBackend::extract(&title_text, &ctx).unwrap();
     assert_eq!(title_extracted.content, "Application Title");
     assert_eq!(title_extracted.font_size, 24.0);
     assert_eq!(title_extracted.color, Color::BLUE);
 
-    let body_extracted = MockBackend::extract(&body_text, &ctx);
+    let body_extracted = MockBackend::extract(&body_text, &ctx).unwrap();
     assert_eq!(
         body_extracted.content,
         "This is some body text with default styling"
@@ -45,7 +45,7 @@ fn complete_view_extraction_workflow() {
     assert_eq!(body_extracted.font_size, 16.0); // Default font size
     assert_eq!(body_extracted.color, Color::BLACK); // Default color
 
-    let error_extracted = MockBackend::extract(&error_text, &ctx);
+    let error_extracted = MockBackend::extract(&error_text, &ctx).unwrap();
     assert_eq!(error_extracted.content, "Error: Something went wrong!");
     assert_eq!(error_extracted.font_size, 14.0);
     assert_eq!(error_extracted.color, Color::RED);
@@ -64,14 +64,14 @@ fn complete_view_extraction_workflow() {
     let disabled_button = Button::new("Disabled").disable();
 
     // Extract button components and verify all properties and state are preserved
-    let primary_extracted = MockBackend::extract(&primary_button.view(), &ctx);
+    let primary_extracted = MockBackend::extract(&primary_button.view(), &ctx).unwrap();
     assert_eq!(primary_extracted.text, "Save");
     assert_eq!(primary_extracted.background_color, Color::BLUE);
     assert_eq!(primary_extracted.text_style.color, Color::WHITE);
     assert!(primary_extracted.interaction_state.is_enabled());
     assert!(!primary_extracted.interaction_state.is_pressed());
 
-    let secondary_extracted = MockBackend::extract(&secondary_button.view(), &ctx);
+    let secondary_extracted = MockBackend::extract(&secondary_button.view(), &ctx).unwrap();
     assert_eq!(secondary_extracted.text, "Load");
     assert_eq!(
         secondary_extracted.background_color,
@@ -79,13 +79,13 @@ fn complete_view_extraction_workflow() {
     );
     assert!(secondary_extracted.interaction_state.is_enabled());
 
-    let danger_extracted = MockBackend::extract(&danger_button.view(), &ctx);
+    let danger_extracted = MockBackend::extract(&danger_button.view(), &ctx).unwrap();
     assert_eq!(danger_extracted.text, "Delete");
     assert_eq!(danger_extracted.background_color, Color::RED);
     assert_eq!(danger_extracted.text_style.color, Color::WHITE);
     assert!(danger_extracted.interaction_state.is_enabled());
 
-    let disabled_extracted = MockBackend::extract(&disabled_button.view(), &ctx);
+    let disabled_extracted = MockBackend::extract(&disabled_button.view(), &ctx).unwrap();
     assert_eq!(disabled_extracted.text, "Disabled");
     assert!(!disabled_extracted.interaction_state.is_enabled());
 }
@@ -117,10 +117,10 @@ fn extraction_is_pure_operation() {
     let original_button_bg = original_button.background_color;
 
     // Extract views multiple times
-    let _extracted_text_1 = MockBackend::extract(&original_text, &ctx);
-    let _extracted_text_2 = MockBackend::extract(&original_text, &ctx);
-    let _extracted_button_1 = MockBackend::extract(&original_button.view(), &ctx);
-    let _extracted_button_2 = MockBackend::extract(&original_button.view(), &ctx);
+    let _extracted_text_1 = MockBackend::extract(&original_text, &ctx).unwrap();
+    let _extracted_text_2 = MockBackend::extract(&original_text, &ctx).unwrap();
+    let _extracted_button_1 = MockBackend::extract(&original_button.view(), &ctx).unwrap();
+    let _extracted_button_2 = MockBackend::extract(&original_button.view(), &ctx).unwrap();
 
     // Verify original views are completely unchanged
     assert_eq!(original_text.content, original_text_content);
@@ -165,42 +165,42 @@ fn button_component_state_handling() {
     ));
 
     // Extract and verify state
-    let enabled_extracted = MockBackend::extract(&enabled_button.view(), &ctx);
+    let enabled_extracted = MockBackend::extract(&enabled_button.view(), &ctx).unwrap();
     assert_eq!(enabled_extracted.text, "Enabled");
     assert!(enabled_extracted.interaction_state.is_enabled());
     assert!(!enabled_extracted.interaction_state.is_pressed());
     assert!(!enabled_extracted.interaction_state.is_focused());
     assert!(!enabled_extracted.interaction_state.is_hovered());
 
-    let disabled_extracted = MockBackend::extract(&disabled_button.view(), &ctx);
+    let disabled_extracted = MockBackend::extract(&disabled_button.view(), &ctx).unwrap();
     assert_eq!(disabled_extracted.text, "Disabled");
     assert!(!disabled_extracted.interaction_state.is_enabled());
     assert!(!disabled_extracted.interaction_state.is_pressed());
     assert!(!disabled_extracted.interaction_state.is_focused());
     assert!(!disabled_extracted.interaction_state.is_hovered());
 
-    let clicked_extracted = MockBackend::extract(&clicked_button.view(), &ctx);
+    let clicked_extracted = MockBackend::extract(&clicked_button.view(), &ctx).unwrap();
     assert_eq!(clicked_extracted.text, "Clicked");
     assert!(clicked_extracted.interaction_state.is_enabled());
     assert!(!clicked_extracted.interaction_state.is_pressed());
     assert!(!clicked_extracted.interaction_state.is_focused());
     assert!(!clicked_extracted.interaction_state.is_hovered());
 
-    let focused_extracted = MockBackend::extract(&focused_button.view(), &ctx);
+    let focused_extracted = MockBackend::extract(&focused_button.view(), &ctx).unwrap();
     assert_eq!(focused_extracted.text, "Focused");
     assert!(focused_extracted.interaction_state.is_enabled());
     assert!(!focused_extracted.interaction_state.is_pressed());
     assert!(focused_extracted.interaction_state.is_focused());
     assert!(!focused_extracted.interaction_state.is_hovered());
 
-    let pressed_extracted = MockBackend::extract(&pressed_button.view(), &ctx);
+    let pressed_extracted = MockBackend::extract(&pressed_button.view(), &ctx).unwrap();
     assert_eq!(pressed_extracted.text, "Pressed");
     assert!(pressed_extracted.interaction_state.is_enabled());
     assert!(pressed_extracted.interaction_state.is_pressed());
     assert!(!pressed_extracted.interaction_state.is_focused());
     assert!(!pressed_extracted.interaction_state.is_hovered());
 
-    let hovered_extracted = MockBackend::extract(&hovered_button.view(), &ctx);
+    let hovered_extracted = MockBackend::extract(&hovered_button.view(), &ctx).unwrap();
     assert_eq!(hovered_extracted.text, "Hovered");
     assert!(hovered_extracted.interaction_state.is_enabled());
     assert!(!hovered_extracted.interaction_state.is_pressed());
@@ -219,7 +219,7 @@ fn button_component_state_handling() {
             InteractionMessage::PressStateChanged(true),
         ));
 
-    let complex_extracted = MockBackend::extract(&complex_button.view(), &ctx);
+    let complex_extracted = MockBackend::extract(&complex_button.view(), &ctx).unwrap();
     assert_eq!(complex_extracted.text, "Complex");
     assert!(complex_extracted.interaction_state.is_enabled());
     assert!(complex_extracted.interaction_state.is_pressed());
@@ -246,13 +246,28 @@ fn view_styling_preservation() {
     let custom_text = Text::new("Custom").color(Color::rgba(0.5, 0.7, 0.9, 0.8));
 
     // Extract and verify colors
-    assert_eq!(MockBackend::extract(&black_text, &ctx).color, Color::BLACK);
-    assert_eq!(MockBackend::extract(&white_text, &ctx).color, Color::WHITE);
-    assert_eq!(MockBackend::extract(&red_text, &ctx).color, Color::RED);
-    assert_eq!(MockBackend::extract(&green_text, &ctx).color, Color::GREEN);
-    assert_eq!(MockBackend::extract(&blue_text, &ctx).color, Color::BLUE);
     assert_eq!(
-        MockBackend::extract(&custom_text, &ctx).color,
+        MockBackend::extract(&black_text, &ctx).unwrap().color,
+        Color::BLACK
+    );
+    assert_eq!(
+        MockBackend::extract(&white_text, &ctx).unwrap().color,
+        Color::WHITE
+    );
+    assert_eq!(
+        MockBackend::extract(&red_text, &ctx).unwrap().color,
+        Color::RED
+    );
+    assert_eq!(
+        MockBackend::extract(&green_text, &ctx).unwrap().color,
+        Color::GREEN
+    );
+    assert_eq!(
+        MockBackend::extract(&blue_text, &ctx).unwrap().color,
+        Color::BLUE
+    );
+    assert_eq!(
+        MockBackend::extract(&custom_text, &ctx).unwrap().color,
         Color::rgba(0.5, 0.7, 0.9, 0.8)
     );
 
@@ -260,15 +275,21 @@ fn view_styling_preservation() {
     let small_text = Text::new("Small").font_size(12.0);
     let large_text = Text::new("Large").font_size(32.0);
 
-    assert_eq!(MockBackend::extract(&small_text, &ctx).font_size, 12.0);
-    assert_eq!(MockBackend::extract(&large_text, &ctx).font_size, 32.0);
+    assert_eq!(
+        MockBackend::extract(&small_text, &ctx).unwrap().font_size,
+        12.0
+    );
+    assert_eq!(
+        MockBackend::extract(&large_text, &ctx).unwrap().font_size,
+        32.0
+    );
 
     // Test button styling combinations
     let styled_button = Button::new("Styled")
         .background_color(Color::rgba(0.2, 0.4, 0.6, 1.0))
         .with_text(|text| text.color(Color::rgba(0.9, 0.9, 0.9, 1.0)));
 
-    let button_extracted = MockBackend::extract(&styled_button.view(), &ctx);
+    let button_extracted = MockBackend::extract(&styled_button.view(), &ctx).unwrap();
     assert_eq!(
         button_extracted.background_color,
         Color::rgba(0.2, 0.4, 0.6, 1.0)
@@ -293,10 +314,10 @@ fn render_context_integration() {
     let button = Button::new("Context Button").enable();
 
     // Extract with different contexts
-    let text_extracted_1 = MockBackend::extract(&text, &ctx1);
-    let text_extracted_2 = MockBackend::extract(&text, &ctx2);
-    let button_extracted_1 = MockBackend::extract(&button.view(), &ctx1);
-    let button_extracted_2 = MockBackend::extract(&button.view(), &ctx2);
+    let text_extracted_1 = MockBackend::extract(&text, &ctx1).unwrap();
+    let text_extracted_2 = MockBackend::extract(&text, &ctx2).unwrap();
+    let button_extracted_1 = MockBackend::extract(&button.view(), &ctx1).unwrap();
+    let button_extracted_2 = MockBackend::extract(&button.view(), &ctx2).unwrap();
 
     // Results should be identical regardless of context instance
     assert_eq!(text_extracted_1, text_extracted_2);
@@ -319,7 +340,7 @@ fn extraction_edge_cases() {
 
     // Test empty text
     let empty_text = Text::new("");
-    let empty_extracted = MockBackend::extract(&empty_text, &ctx);
+    let empty_extracted = MockBackend::extract(&empty_text, &ctx).unwrap();
     assert_eq!(empty_extracted.content, "");
     assert_eq!(empty_extracted.font_size, 16.0); // Default font size
     assert_eq!(empty_extracted.color, Color::BLACK); // Default color
@@ -328,27 +349,27 @@ fn extraction_edge_cases() {
     let tiny_text = Text::new("Tiny").font_size(1.0);
     let huge_text = Text::new("Huge").font_size(1000.0);
 
-    let tiny_extracted = MockBackend::extract(&tiny_text, &ctx);
-    let huge_extracted = MockBackend::extract(&huge_text, &ctx);
+    let tiny_extracted = MockBackend::extract(&tiny_text, &ctx).unwrap();
+    let huge_extracted = MockBackend::extract(&huge_text, &ctx).unwrap();
 
     assert_eq!(tiny_extracted.font_size, 1.0);
     assert_eq!(huge_extracted.font_size, 1000.0);
 
     // Test transparent colors
     let transparent_text = Text::new("Transparent").color(Color::rgba(1.0, 0.0, 0.0, 0.0));
-    let transparent_extracted = MockBackend::extract(&transparent_text, &ctx);
+    let transparent_extracted = MockBackend::extract(&transparent_text, &ctx).unwrap();
     assert_eq!(transparent_extracted.color, Color::rgba(1.0, 0.0, 0.0, 0.0));
 
     // Test button with empty text
     let empty_button = Button::new("");
-    let empty_button_extracted = MockBackend::extract(&empty_button.view(), &ctx);
+    let empty_button_extracted = MockBackend::extract(&empty_button.view(), &ctx).unwrap();
     assert_eq!(empty_button_extracted.text, "");
     assert!(empty_button_extracted.interaction_state.is_enabled());
 
     // Test button state transitions (disabled then enabled)
     let state_button = Button::new("State").disable().enable(); // Should end up enabled
 
-    let state_extracted = MockBackend::extract(&state_button.view(), &ctx);
+    let state_extracted = MockBackend::extract(&state_button.view(), &ctx).unwrap();
     assert_eq!(state_extracted.text, "State");
     assert!(state_extracted.interaction_state.is_enabled());
 }
@@ -380,7 +401,7 @@ fn deep_nesting_extraction() {
     );
 
     // Should be able to extract without stack overflow
-    let _extracted = MockBackend::extract(&deeply_nested, &ctx);
+    let _extracted = MockBackend::extract(&deeply_nested, &ctx).unwrap();
     // If we get here, the test passed
 }
 
@@ -401,7 +422,7 @@ fn large_collection_extraction() {
     // Extract all of them
     let extracted: Vec<_> = components
         .iter()
-        .map(|comp| MockBackend::extract(comp, &ctx))
+        .map(|comp| MockBackend::extract(comp, &ctx).unwrap())
         .collect();
 
     assert_eq!(extracted.len(), 1000);
@@ -423,7 +444,7 @@ fn large_collection_extraction() {
         Text::new("11"),
         Text::new("12"),
     );
-    let extracted_tuple = MockBackend::extract(&large_tuple, &ctx);
+    let extracted_tuple = MockBackend::extract(&large_tuple, &ctx).unwrap();
     assert_eq!(extracted_tuple.0.content, "1");
     assert_eq!(extracted_tuple.11.content, "12");
 }
@@ -438,18 +459,18 @@ fn option_extraction() {
 
     // Nested options
     let nested_some: Option<Option<Text>> = Some(Some(Text::new("Nested")));
-    let extracted = MockBackend::extract(&nested_some, &ctx);
+    let extracted = MockBackend::extract(&nested_some, &ctx).unwrap();
     assert!(extracted.is_some());
     assert!(extracted.as_ref().unwrap().is_some());
     assert_eq!(extracted.unwrap().unwrap().content, "Nested");
 
     let nested_none: Option<Option<Text>> = Some(None);
-    let extracted = MockBackend::extract(&nested_none, &ctx);
+    let extracted = MockBackend::extract(&nested_none, &ctx).unwrap();
     assert!(extracted.is_some());
     assert!(extracted.unwrap().is_none());
 
     let outer_none: Option<Option<Text>> = None;
-    let extracted = MockBackend::extract(&outer_none, &ctx);
+    let extracted = MockBackend::extract(&outer_none, &ctx).unwrap();
     assert!(extracted.is_none());
 
     // Option in containers
@@ -458,7 +479,7 @@ fn option_extraction() {
         None::<Text>,
         Some(Text::new("Also present")),
     ));
-    let extracted = MockBackend::extract(&optional_stack, &ctx);
+    let extracted = MockBackend::extract(&optional_stack, &ctx).unwrap();
     assert!(extracted.content.0.is_some());
     assert!(extracted.content.1.is_none());
     assert!(extracted.content.2.is_some());

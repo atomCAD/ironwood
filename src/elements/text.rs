@@ -134,23 +134,23 @@ mod tests {
 
         // Empty string text
         let empty_text = Text::new("");
-        let extracted = MockBackend::extract(&empty_text, &ctx);
+        let extracted = MockBackend::extract(&empty_text, &ctx).unwrap();
         assert_eq!(extracted.content, "");
 
         // Very long text content
         let long_content = "a".repeat(10000);
         let long_text = Text::new(&long_content);
-        let extracted = MockBackend::extract(&long_text, &ctx);
+        let extracted = MockBackend::extract(&long_text, &ctx).unwrap();
         assert_eq!(extracted.content.len(), 10000);
 
         // Very small font size
         let tiny_font = Text::new("Test").font_size(1.0);
-        let extracted = MockBackend::extract(&tiny_font, &ctx);
+        let extracted = MockBackend::extract(&tiny_font, &ctx).unwrap();
         assert_eq!(extracted.font_size, 1.0);
 
         // Very large font size
         let huge_font = Text::new("Test").font_size(200.0);
-        let extracted = MockBackend::extract(&huge_font, &ctx);
+        let extracted = MockBackend::extract(&huge_font, &ctx).unwrap();
         assert_eq!(extracted.font_size, 200.0);
     }
 }

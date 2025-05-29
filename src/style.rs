@@ -234,26 +234,26 @@ mod tests {
         // Colors outside normal 0.0-1.0 range
         let over_range = Color::rgba(1.2, -0.1, 1.5, 0.5);
         let text = Text::new("Test").color(over_range);
-        let extracted = MockBackend::extract(&text, &ctx);
+        let extracted = MockBackend::extract(&text, &ctx).unwrap();
         assert_eq!(extracted.color, over_range);
 
         // Fully transparent color
         let transparent = Color::rgba(1.0, 0.0, 0.0, 0.0);
         let text = Text::new("Test").color(transparent);
-        let extracted = MockBackend::extract(&text, &ctx);
+        let extracted = MockBackend::extract(&text, &ctx).unwrap();
         assert_eq!(extracted.color, transparent);
 
         // Precise color values
         let precise = Color::rgba(0.123_456_8, 0.987_654_3, 0.555_555_6, 0.333_333_3);
         let text = Text::new("Test").color(precise);
-        let extracted = MockBackend::extract(&text, &ctx);
+        let extracted = MockBackend::extract(&text, &ctx).unwrap();
         assert_eq!(extracted.color, precise);
 
         // Large display font with transparency
         let display_text = Text::new("Large Display")
             .font_size(72.0)
             .color(Color::rgba(0.0, 0.0, 0.0, 0.1));
-        let extracted = MockBackend::extract(&display_text, &ctx);
+        let extracted = MockBackend::extract(&display_text, &ctx).unwrap();
         assert_eq!(extracted.font_size, 72.0);
         assert_eq!(extracted.color.a, 0.1);
     }

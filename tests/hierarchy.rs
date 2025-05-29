@@ -140,7 +140,7 @@ fn component_hierarchy_integration() {
 
     // Verify initial status text
     let ctx = RenderContext::new();
-    let status_extracted = MockBackend::extract(&form.status_text, &ctx);
+    let status_extracted = MockBackend::extract(&form.status_text, &ctx).unwrap();
     assert_eq!(status_extracted.content, "Ready to submit");
 
     // Test data update
@@ -288,26 +288,26 @@ fn hierarchy_view_extraction() {
     let ctx = RenderContext::new();
 
     // Extract each component and verify properties are preserved
-    let title_extracted = MockBackend::extract(&dashboard.title, &ctx);
+    let title_extracted = MockBackend::extract(&dashboard.title, &ctx).unwrap();
     assert_eq!(title_extracted.content, "Dashboard");
     assert_eq!(title_extracted.font_size, 24.0);
     assert_eq!(title_extracted.color, Color::BLUE);
 
-    let save_extracted = MockBackend::extract(&dashboard.save_button.view(), &ctx);
+    let save_extracted = MockBackend::extract(&dashboard.save_button.view(), &ctx).unwrap();
     assert_eq!(save_extracted.text, "Save");
     assert_eq!(save_extracted.background_color, Color::GREEN);
     assert_eq!(save_extracted.text_style.color, Color::WHITE);
     assert!(save_extracted.interaction_state.is_focused());
     assert!(save_extracted.interaction_state.is_enabled());
 
-    let load_extracted = MockBackend::extract(&dashboard.load_button.view(), &ctx);
+    let load_extracted = MockBackend::extract(&dashboard.load_button.view(), &ctx).unwrap();
     assert_eq!(load_extracted.text, "Load");
     assert_eq!(load_extracted.background_color, Color::BLUE);
     assert_eq!(load_extracted.text_style.color, Color::WHITE);
     assert!(!load_extracted.interaction_state.is_focused());
     assert!(!load_extracted.interaction_state.is_enabled());
 
-    let status_extracted = MockBackend::extract(&dashboard.status, &ctx);
+    let status_extracted = MockBackend::extract(&dashboard.status, &ctx).unwrap();
     assert_eq!(status_extracted.content, "Ready");
     assert_eq!(status_extracted.font_size, 14.0);
     assert_eq!(status_extracted.color, Color::BLACK);
@@ -470,8 +470,8 @@ fn deep_component_nesting() {
 
     // Verify updates reached correct levels
     let ctx = RenderContext::new();
-    let outer_text_extracted = MockBackend::extract(&outer.outer_text, &ctx);
-    let inner_text_extracted = MockBackend::extract(&outer.middle.inner.text, &ctx);
+    let outer_text_extracted = MockBackend::extract(&outer.outer_text, &ctx).unwrap();
+    let inner_text_extracted = MockBackend::extract(&outer.middle.inner.text, &ctx).unwrap();
 
     assert_eq!(outer_text_extracted.content, "Updated Outer");
     assert_eq!(inner_text_extracted.content, "Updated Inner");

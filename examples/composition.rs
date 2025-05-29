@@ -51,7 +51,7 @@ fn basic_tuple_composition() {
     // 2-tuple composition
     let pair = (Text::new("First item"), Text::new("Second item"));
 
-    let extracted_pair = MockBackend::extract(&pair, &ctx);
+    let extracted_pair = MockBackend::extract(&pair, &ctx).unwrap();
     println!("2-tuple extracted:");
     println!("  Item 1: '{}'", extracted_pair.0.content);
     println!("  Item 2: '{}'", extracted_pair.1.content);
@@ -59,7 +59,7 @@ fn basic_tuple_composition() {
     // 3-tuple composition
     let triple = (Text::new("Alpha"), Text::new("Beta"), Text::new("Gamma"));
 
-    let extracted_triple = MockBackend::extract(&triple, &ctx);
+    let extracted_triple = MockBackend::extract(&triple, &ctx).unwrap();
     println!("3-tuple extracted:");
     println!("  Item 1: '{}'", extracted_triple.0.content);
     println!("  Item 2: '{}'", extracted_triple.1.content);
@@ -73,7 +73,7 @@ fn basic_tuple_composition() {
         Text::new("West"),
     );
 
-    let extracted_quad = MockBackend::extract(&quad, &ctx);
+    let extracted_quad = MockBackend::extract(&quad, &ctx).unwrap();
     println!("4-tuple extracted:");
     println!("  Item 1: '{}'", extracted_quad.0.content);
     println!("  Item 2: '{}'", extracted_quad.1.content);
@@ -93,7 +93,7 @@ fn container_views_with_spacing() {
     ))
     .spacing(16.0);
 
-    let extracted_vstack = MockBackend::extract(&vstack, &ctx);
+    let extracted_vstack = MockBackend::extract(&vstack, &ctx).unwrap();
     println!("VStack with 16.0 spacing:");
     println!("  Spacing: {}", extracted_vstack.spacing);
     println!("  Item 1: '{}'", extracted_vstack.content.0.content);
@@ -104,7 +104,7 @@ fn container_views_with_spacing() {
     let hstack =
         HStack::new((Text::new("Left"), Text::new("Center"), Text::new("Right"))).spacing(8.0);
 
-    let extracted_hstack = MockBackend::extract(&hstack, &ctx);
+    let extracted_hstack = MockBackend::extract(&hstack, &ctx).unwrap();
     println!("HStack with 8.0 spacing:");
     println!("  Spacing: {}", extracted_hstack.spacing);
     println!("  Item 1: '{}'", extracted_hstack.content.0.content);
@@ -143,7 +143,7 @@ fn complex_nested_layout() {
     // Main layout
     let main_layout = VStack::new((header, content_grid, footer)).spacing(20.0);
 
-    let extracted = MockBackend::extract(&main_layout, &ctx);
+    let extracted = MockBackend::extract(&main_layout, &ctx).unwrap();
 
     println!("Complex nested layout extracted:");
     println!("  Main spacing: {}", extracted.spacing);
@@ -204,7 +204,7 @@ fn mixed_content_types() {
 
     let panel = VStack::new((text_label, button_row, status_text)).spacing(15.0);
 
-    let extracted = MockBackend::extract(&panel, &ctx);
+    let extracted = MockBackend::extract(&panel, &ctx).unwrap();
 
     println!("Mixed content panel extracted:");
     println!("  Panel spacing: {}", extracted.spacing);

@@ -90,7 +90,7 @@ fn test_dynamic_hierarchies() {
     // Access through trait object and verify extraction works
     let view: &dyn View = &hierarchy;
     let ctx = RenderContext::new();
-    let extracted = MockBackend::extract(&hierarchy, &ctx);
+    let extracted = MockBackend::extract(&hierarchy, &ctx).unwrap();
 
     assert_eq!(extracted.spacing, 12.0);
     assert_eq!(extracted.content.0.content, "Header");
@@ -164,7 +164,7 @@ fn test_framework_dynamic_integration() {
     .spacing(5.0);
 
     let ctx = RenderContext::new();
-    let extracted = MockBackend::extract(&mixed_hierarchy, &ctx);
+    let extracted = MockBackend::extract(&mixed_hierarchy, &ctx).unwrap();
     assert_eq!(extracted.spacing, 5.0);
     assert_eq!(extracted.content.0.content, "Static header");
     assert_eq!(extracted.content.1.content, "Static footer");
