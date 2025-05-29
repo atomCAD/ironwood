@@ -91,7 +91,11 @@ impl Text {
     }
 }
 
-impl View for Text {}
+impl View for Text {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
 
 #[cfg(test)]
 mod tests {

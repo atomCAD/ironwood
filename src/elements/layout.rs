@@ -97,7 +97,11 @@ impl Default for Spacer {
     }
 }
 
-impl View for Spacer {}
+impl View for Spacer {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
 
 /// Vertical stack container that arranges children vertically.
 ///
@@ -193,7 +197,11 @@ impl<T: View> VStack<T> {
     }
 }
 
-impl<T: View> View for VStack<T> {}
+impl<T: View> View for VStack<T> {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
 
 /// Horizontal stack container that arranges children horizontally.
 ///
@@ -289,7 +297,11 @@ impl<T: View> HStack<T> {
     }
 }
 
-impl<T: View> View for HStack<T> {}
+impl<T: View> View for HStack<T> {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
 
 #[cfg(test)]
 mod tests {

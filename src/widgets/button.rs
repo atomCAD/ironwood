@@ -36,7 +36,11 @@ pub struct ButtonView {
     pub interaction_state: InteractionState,
 }
 
-impl View for ButtonView {}
+impl View for ButtonView {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
 
 /// Messages that represent user interactions with a Button component.
 ///
