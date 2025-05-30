@@ -12,11 +12,11 @@
 //! The mock backend is also useful for automated testing, as it produces
 //! deterministic output that can be easily compared in assertions.
 
-use std::fmt::Debug;
+use std::{any::type_name, fmt::Debug};
 
 use crate::{
     elements::{Alignment, HStack, Spacer, Text, VStack},
-    extraction::{ExtractionResult, RenderContext, ViewExtractor},
+    extraction::{ExtractionError, ExtractionResult, RenderContext, ViewExtractor, ViewRegistry},
     interaction::InteractionState,
     style::{Color, TextStyle},
     view::View,
@@ -36,14 +36,22 @@ use crate::{
 /// # Examples
 ///
 /// ```
-/// use ironwood::{prelude::*, backends::mock::MockBackend};
+/// use ironwood::{prelude::*, backends::mock::MockBackend, extraction::ViewExtractor};
 ///
 /// let text = Text::new("Hello, world!");
 /// let ctx = RenderContext::new();
 /// let extracted = MockBackend::extract(&text, &ctx).unwrap();
 /// assert_eq!(extracted.content, "Hello, world!");
+///
+/// // Or use the backend's dynamic extraction for trait objects
+/// let backend = MockBackend::new();
+/// let view: Box<dyn View> = Box::new(Text::new("Dynamic"));
+/// let dynamic_extracted = backend.extract_dynamic(view.as_ref(), &ctx).unwrap();
 /// ```
-pub struct MockBackend;
+pub struct MockBackend {
+    /// Type registry for dynamic view extraction
+    registry: ViewRegistry,
+}
 
 /// Mock representation of extracted text for testing.
 ///
@@ -58,6 +66,102 @@ pub struct MockText {
     pub font_size: f32,
     /// Text color
     pub color: Color,
+}
+
+impl MockBackend {
+    /// Create a new MockBackend with a configured type registry.
+    ///
+    /// This sets up all the view types that the MockBackend can handle,
+    /// including both static extraction and dynamic conversion functions.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ironwood::backends::mock::MockBackend;
+    ///
+    /// let backend = MockBackend::new();
+    /// // Backend is ready to extract any registered view type
+    /// ```
+    pub fn new() -> Self {
+        let mut registry = ViewRegistry::new();
+
+        // Register view types with their extractors
+        registry.register::<Text, MockBackend>();
+        registry.register::<ButtonView, MockBackend>();
+        registry.register::<Spacer, MockBackend>();
+        registry.register::<VStack<Vec<Box<dyn View>>>, MockBackend>();
+        registry.register::<HStack<Vec<Box<dyn View>>>, MockBackend>();
+
+        // Register conversion functions for dynamic extraction
+        registry.register_converter::<Text, MockText, MockDynamicChild, _>(MockDynamicChild::Text);
+
+        registry.register_converter::<ButtonView, MockButton, MockDynamicChild, _>(
+            MockDynamicChild::Button,
+        );
+
+        registry.register_converter::<Spacer, MockSpacer, MockDynamicChild, _>(
+            MockDynamicChild::Spacer,
+        );
+
+        registry.register_converter::<
+            VStack<Vec<Box<dyn View>>>,
+            MockVStack<Vec<MockDynamicChild>>,
+            MockDynamicChild,
+            _,
+        >(
+            MockDynamicChild::VStack,
+        );
+
+        registry.register_converter::<
+            HStack<Vec<Box<dyn View>>>,
+            MockHStack<Vec<MockDynamicChild>>,
+            MockDynamicChild,
+            _,
+        >(
+            MockDynamicChild::HStack,
+        );
+
+        Self { registry }
+    }
+
+    /// Extract a view dynamically using the backend's type registry.
+    ///
+    /// This method can extract any view type that has been registered with
+    /// the backend, returning the appropriate MockDynamicChild variant.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ironwood::{prelude::*, backends::mock::MockBackend};
+    ///
+    /// let backend = MockBackend::new();
+    /// let view: Box<dyn View> = Box::new(Text::new("Hello"));
+    /// let ctx = RenderContext::new();
+    /// let extracted = backend.extract_dynamic(view.as_ref(), &ctx).unwrap();
+    /// ```
+    pub fn extract_dynamic(
+        &self,
+        view: &dyn View,
+        context: &RenderContext,
+    ) -> ExtractionResult<MockDynamicChild> {
+        // Extract and convert using the registry
+        let converted = self
+            .registry
+            .extract_and_convert::<MockBackend>(view, context)?;
+
+        // The registry guarantees this will be a MockDynamicChild
+        Ok(*converted.downcast::<MockDynamicChild>().map_err(|_| {
+            ExtractionError::OutputDowncastFailed {
+                expected_type: type_name::<MockDynamicChild>(),
+            }
+        })?)
+    }
+}
+
+impl Default for MockBackend {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ViewExtractor<Text> for MockBackend {
@@ -614,6 +718,7 @@ pub struct MockVStack<T> {
     pub spacing: f32,
 }
 
+/// Statically typed VStack container extraction
 impl<T> ViewExtractor<VStack<T>> for MockBackend
 where
     T: View,
@@ -624,6 +729,34 @@ where
     fn extract(view: &VStack<T>, context: &RenderContext) -> ExtractionResult<Self::Output> {
         Ok(MockVStack {
             content: Self::extract(&view.content, context)?,
+            alignment: view.alignment,
+            spacing: view.spacing,
+        })
+    }
+}
+
+/// Dynamically typed VStack container extraction
+impl ViewExtractor<VStack<Vec<Box<dyn View>>>> for MockBackend {
+    type Output = MockVStack<Vec<MockDynamicChild>>;
+
+    fn extract(
+        view: &VStack<Vec<Box<dyn View>>>,
+        context: &RenderContext,
+    ) -> ExtractionResult<Self::Output> {
+        // Create a backend instance for dynamic extraction
+        let backend = MockBackend::new();
+
+        // Extract each child dynamically using the backend's registry
+        let extracted_children: Result<Vec<MockDynamicChild>, _> = view
+            .content
+            .iter()
+            .map(|child| {
+                MockDynamicChild::extract_from_view_with_backend(child.as_ref(), context, &backend)
+            })
+            .collect();
+
+        Ok(MockVStack {
+            content: extracted_children?,
             alignment: view.alignment,
             spacing: view.spacing,
         })
@@ -641,6 +774,7 @@ pub struct MockHStack<T> {
     pub spacing: f32,
 }
 
+/// Statically typed HStack container extraction
 impl<T> ViewExtractor<HStack<T>> for MockBackend
 where
     T: View,
@@ -654,6 +788,61 @@ where
             alignment: view.alignment,
             spacing: view.spacing,
         })
+    }
+}
+
+/// Dynamically typed HStack container extraction
+impl ViewExtractor<HStack<Vec<Box<dyn View>>>> for MockBackend {
+    type Output = MockHStack<Vec<MockDynamicChild>>;
+
+    fn extract(
+        view: &HStack<Vec<Box<dyn View>>>,
+        context: &RenderContext,
+    ) -> ExtractionResult<Self::Output> {
+        // Create a backend instance for dynamic extraction
+        let backend = MockBackend::new();
+
+        // Extract each child dynamically using the backend's registry
+        let extracted_children: Result<Vec<MockDynamicChild>, _> = view
+            .content
+            .iter()
+            .map(|child| {
+                MockDynamicChild::extract_from_view_with_backend(child.as_ref(), context, &backend)
+            })
+            .collect();
+
+        Ok(MockHStack {
+            content: extracted_children?,
+            alignment: view.alignment,
+            spacing: view.spacing,
+        })
+    }
+}
+
+/// A type-erased representation of extracted dynamic children.
+///
+/// This allows the mock backend to handle different types of extracted views
+/// in a uniform way while preserving type information for testing.
+#[derive(Debug, Clone, PartialEq)]
+pub enum MockDynamicChild {
+    Text(MockText),
+    Button(MockButton),
+    Spacer(MockSpacer),
+    VStack(MockVStack<Vec<MockDynamicChild>>),
+    HStack(MockHStack<Vec<MockDynamicChild>>),
+}
+
+impl MockDynamicChild {
+    /// Extract a view dynamically into a MockDynamicChild using a backend instance.
+    ///
+    /// This method uses the backend's type registry to eliminate hardcoded type checking.
+    /// All type dispatch is handled by the backend's registry.
+    pub fn extract_from_view_with_backend(
+        view: &dyn View,
+        context: &RenderContext,
+        backend: &MockBackend,
+    ) -> ExtractionResult<Self> {
+        backend.extract_dynamic(view, context)
     }
 }
 
@@ -840,6 +1029,42 @@ mod tests {
         let none_text: Option<Text> = None;
         let none_extracted = MockBackend::extract(&none_text, &ctx).unwrap();
         assert!(none_extracted.is_none());
+    }
+
+    #[test]
+    fn backend_owns_registry_architecture() {
+        // This test demonstrates that the registry is now properly part of the backend object
+        // This allows for better encapsulation and potentially different backend configurations
+        let ctx = RenderContext::new();
+
+        // Create a backend instance - the registry is part of the backend
+        let backend = MockBackend::new();
+
+        // The backend can extract views dynamically using its own registry
+        let text_view = Text::new("Backend Test");
+        let button_view = Button::new("Backend Button").view();
+
+        // Extract using the backend's registry
+        let text_extracted = backend.extract_dynamic(&text_view, &ctx).unwrap();
+        let button_extracted = backend.extract_dynamic(&button_view, &ctx).unwrap();
+
+        // Verify the extractions worked correctly
+        assert!(
+            matches!(text_extracted, MockDynamicChild::Text(text) if text.content == "Backend Test")
+        );
+
+        assert!(
+            matches!(button_extracted, MockDynamicChild::Button(button) if button.text == "Backend Button")
+        );
+
+        // The backend encapsulates its registry - no global state needed
+        // Different backend instances could potentially have different registries
+        let another_backend = MockBackend::new();
+        let another_extracted = another_backend.extract_dynamic(&text_view, &ctx).unwrap();
+
+        assert!(
+            matches!(another_extracted, MockDynamicChild::Text(text) if text.content == "Backend Test")
+        );
     }
 
     #[test]
@@ -1085,6 +1310,92 @@ mod tests {
         // Footer
         assert_eq!(extracted.content.2.content, "Footer");
         assert_eq!(extracted.content.2.color, Color::BLUE);
+    }
+
+    #[test]
+    fn registry_based_dynamic_extraction_no_hardcoding() {
+        // This test demonstrates that the registry-based approach works
+        // without any hardcoded type checking in the extraction logic
+        let ctx = RenderContext::new();
+
+        // Create a dynamic container with mixed view types
+        let dynamic_views: Vec<Box<dyn View>> = vec![
+            Box::new(Text::new("Hello")),
+            Box::new(Button::new("Click me").view()),
+            Box::new(Spacer::min_size(10.0)),
+        ];
+
+        let dynamic_vstack = VStack::dynamic().children(dynamic_views).spacing(8.0);
+
+        // Extract the dynamic container
+        let extracted = MockBackend::extract(&dynamic_vstack, &ctx).unwrap();
+
+        // Verify the structure was extracted correctly
+        assert_eq!(extracted.spacing, 8.0);
+        assert_eq!(extracted.content.len(), 3);
+
+        // Verify each child was converted correctly by the registry
+        assert!(
+            matches!(&extracted.content[0], MockDynamicChild::Text(text) if text.content == "Hello")
+        );
+
+        assert!(
+            matches!(&extracted.content[1], MockDynamicChild::Button(button) if button.text == "Click me")
+        );
+
+        assert!(
+            matches!(&extracted.content[2], MockDynamicChild::Spacer(spacer) if spacer.min_size == 10.0)
+        );
+    }
+
+    #[test]
+    fn nested_dynamic_containers_registry_based() {
+        // Test nested dynamic containers to ensure the registry handles
+        // recursive extraction correctly
+        let ctx = RenderContext::new();
+
+        // Create nested dynamic structure
+        let inner_hstack = HStack::dynamic()
+            .child(Box::new(Text::new("Left")))
+            .child(Box::new(Text::new("Right")))
+            .spacing(4.0);
+
+        let outer_vstack = VStack::dynamic()
+            .child(Box::new(Text::new("Header")))
+            .child(Box::new(inner_hstack))
+            .child(Box::new(Button::new("Footer Button").view()))
+            .spacing(12.0);
+
+        // Extract the nested structure
+        let extracted = MockBackend::extract(&outer_vstack, &ctx).unwrap();
+
+        // Verify the nested structure
+        assert_eq!(extracted.spacing, 12.0);
+        assert_eq!(extracted.content.len(), 3);
+
+        // Check header
+        assert!(
+            matches!(&extracted.content[0], MockDynamicChild::Text(text) if text.content == "Header")
+        );
+
+        // Check nested HStack
+        assert!(
+            matches!(&extracted.content[1], MockDynamicChild::HStack(hstack) if hstack.spacing == 4.0 && hstack.content.len() == 2)
+        );
+
+        if let MockDynamicChild::HStack(hstack) = &extracted.content[1] {
+            assert!(
+                matches!(&hstack.content[0], MockDynamicChild::Text(text) if text.content == "Left")
+            );
+            assert!(
+                matches!(&hstack.content[1], MockDynamicChild::Text(text) if text.content == "Right")
+            );
+        }
+
+        // Check footer button
+        assert!(
+            matches!(&extracted.content[2], MockDynamicChild::Button(button) if button.text == "Footer Button")
+        );
     }
 }
 

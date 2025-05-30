@@ -68,7 +68,7 @@ use crate::{message::Message, view::View};
 ///
 /// impl Model for AppModel {
 ///     type Message = AppMessage;
-///     type View = Text;
+///     type View = VStack<(Text, Text)>;
 ///
 ///     fn update(self, message: Self::Message) -> Self {
 ///         match message {
@@ -78,7 +78,11 @@ use crate::{message::Message, view::View};
 ///     }
 ///
 ///     fn view(&self) -> Self::View {
-///         Text::new(format!("Count: {}", self.count))
+///         VStack::new((
+///             Text::new("Counter"),
+///             Text::new(format!("Count: {}", self.count)),
+///         ))
+///         .spacing(8.0)
 ///     }
 /// }
 /// ```
@@ -95,10 +99,66 @@ pub trait Model: Clone + Debug + Send + Sync + 'static {
     /// and a new model is returned, ensuring immutable updates.
     fn update(self, message: Self::Message) -> Self;
 
-    /// Create a view representation of this model's current state.
+    /// Generate a view representation of this model's current state.
     ///
     /// This method creates a pure data structure that describes how the model
     /// should be rendered, without containing any rendering logic itself.
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// use ironwood::prelude::*;
+    ///
+    /// #[derive(Clone, Debug)]
+    /// struct TodoModel {
+    ///     items: Vec<String>,
+    ///     show_completed: bool,
+    /// }
+    ///
+    /// #[derive(Debug, Clone)]
+    /// enum TodoMessage {
+    ///     ToggleCompleted,
+    /// }
+    ///
+    /// impl Message for TodoMessage {}
+    ///
+    /// impl Model for TodoModel {
+    ///     type Message = TodoMessage;
+    ///     type View = VStack<(Text, Vec<Box<dyn View>>)>;
+    ///
+    ///     fn update(self, message: Self::Message) -> Self {
+    ///         match message {
+    ///             TodoMessage::ToggleCompleted => Self {
+    ///                 show_completed: !self.show_completed,
+    ///                 ..self
+    ///             },
+    ///         }
+    ///     }
+    ///
+    ///     fn view(&self) -> Self::View {
+    ///         let mut children: Vec<Box<dyn View>> = vec![
+    ///             Box::new(Text::new("Todo List").font_size(24.0)),
+    ///         ];
+    ///
+    ///         // Add items dynamically
+    ///         for item in &self.items {
+    ///             children.push(Box::new(Text::new(item)));
+    ///         }
+    ///
+    ///         // Conditionally add toggle button
+    ///         if !self.items.is_empty() {
+    ///             children.push(Box::new(Button::new("Toggle Completed").view()));
+    ///         }
+    ///
+    ///         VStack::new((
+    ///             Text::new("Todo List").font_size(24.0),
+    ///             children.into_iter().map(|child| child.into()).collect::<Vec<_>>(),
+    ///         ))
+    ///         .spacing(8.0)
+    ///         .alignment(Alignment::Leading)
+    ///     }
+    /// }
+    /// ```
     fn view(&self) -> Self::View;
 }
 

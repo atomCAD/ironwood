@@ -72,7 +72,9 @@ pub mod view;
 pub mod widgets;
 
 pub use elements::{Alignment, HStack, Spacer, Text, VStack};
-pub use extraction::{ExtractionError, ExtractionResult, RenderContext, ViewExtractor};
+pub use extraction::{
+    ExtractionError, ExtractionResult, RenderContext, ViewExtractor, ViewRegistry,
+};
 pub use interaction::{
     Enableable, Focusable, Hoverable, InteractionMessage, InteractionState, Interactive, Pressable,
 };
@@ -124,7 +126,9 @@ pub use widgets::{Button, ButtonMessage, ButtonView};
 pub mod prelude {
     // Re-export the core traits that users will need in almost every Ironwood application
     pub use crate::elements::{Alignment, HStack, Spacer, Text, VStack};
-    pub use crate::extraction::{ExtractionError, ExtractionResult, RenderContext, ViewExtractor};
+    pub use crate::extraction::{
+        ExtractionError, ExtractionResult, RenderContext, ViewExtractor, ViewRegistry,
+    };
     pub use crate::interaction::{
         Enableable, Focusable, Hoverable, InteractionMessage, InteractionState, Interactive,
         Pressable,
