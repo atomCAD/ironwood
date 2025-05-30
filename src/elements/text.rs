@@ -7,6 +7,8 @@
 //! The Text component is a view that represents styled text content.
 //! It's a pure data structure that describes how text should appear.
 
+use std::any::Any;
+
 use crate::{
     style::{Color, TextStyle},
     view::View,
@@ -92,7 +94,7 @@ impl Text {
 }
 
 impl View for Text {
-    fn as_any(&self) -> &dyn std::any::Any {
+    fn as_any(&self) -> &dyn Any {
         self
     }
 }

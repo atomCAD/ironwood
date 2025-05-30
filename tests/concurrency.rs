@@ -9,7 +9,7 @@
 //! message passing between threads, and concurrent model updates.
 
 use std::{
-    sync::{Arc, Mutex},
+    sync::{Arc, Barrier, Mutex},
     thread,
     time::Duration,
 };
@@ -114,8 +114,8 @@ fn models_and_messages_are_thread_safe() {
     let ctx = Arc::new(RenderContext::new());
 
     // Use barriers to synchronize thread execution phases
-    let barrier1 = Arc::new(std::sync::Barrier::new(3)); // Wait for all threads to start
-    let barrier2 = Arc::new(std::sync::Barrier::new(3)); // Wait before reset operations
+    let barrier1 = Arc::new(Barrier::new(3)); // Wait for all threads to start
+    let barrier2 = Arc::new(Barrier::new(3)); // Wait before reset operations
 
     // Create multiple threads that update the model
     let mut handles = vec![];

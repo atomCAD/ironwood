@@ -8,6 +8,8 @@
 //! data structures that describe layout intent - the actual positioning
 //! and sizing is handled by backends through the ViewExtractor pattern.
 
+use std::any::Any;
+
 use crate::view::View;
 
 /// Alignment options for layout containers.
@@ -98,7 +100,7 @@ impl Default for Spacer {
 }
 
 impl View for Spacer {
-    fn as_any(&self) -> &dyn std::any::Any {
+    fn as_any(&self) -> &dyn Any {
         self
     }
 }
@@ -198,7 +200,7 @@ impl<T: View> VStack<T> {
 }
 
 impl<T: View> View for VStack<T> {
-    fn as_any(&self) -> &dyn std::any::Any {
+    fn as_any(&self) -> &dyn Any {
         self
     }
 }
@@ -298,7 +300,7 @@ impl<T: View> HStack<T> {
 }
 
 impl<T: View> View for HStack<T> {
-    fn as_any(&self) -> &dyn std::any::Any {
+    fn as_any(&self) -> &dyn Any {
         self
     }
 }

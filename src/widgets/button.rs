@@ -9,6 +9,8 @@
 //! models that contain state and behavior, and they create ButtonView instances
 //! through their view() method to represent their visual state.
 
+use std::any::Any;
+
 use crate::{
     elements::Text,
     interaction::{
@@ -37,7 +39,7 @@ pub struct ButtonView {
 }
 
 impl View for ButtonView {
-    fn as_any(&self) -> &dyn std::any::Any {
+    fn as_any(&self) -> &dyn Any {
         self
     }
 }

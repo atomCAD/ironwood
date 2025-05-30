@@ -8,6 +8,8 @@
 //! modules: Model → View → Extraction → Backend. They ensure that interaction
 //! traits, styling, and component behavior work together seamlessly.
 
+use std::cmp::Ordering;
+
 use ironwood::{backends::mock::MockBackend, prelude::*};
 
 #[derive(Debug, Clone, Copy)]
@@ -99,9 +101,9 @@ fn complete_user_interaction_workflow() {
             Text::new(format!("Count: {}", counter))
                 .font_size(24.0)
                 .color(match counter.cmp(&0) {
-                    std::cmp::Ordering::Greater => Color::GREEN,
-                    std::cmp::Ordering::Less => Color::RED,
-                    std::cmp::Ordering::Equal => Color::BLACK,
+                    Ordering::Greater => Color::GREEN,
+                    Ordering::Less => Color::RED,
+                    Ordering::Equal => Color::BLACK,
                 })
         }
 
